@@ -1,7 +1,7 @@
 {
-  "name": "Fechamento Mensal · Milhas Plus",
-  "short_name": "Fechamento",
-  "description": "Cadastro de contas, companhias e lançamentos com relatório de fechamento mensal.",
+  "name": "Central Milhas Plus",
+  "short_name": "Milhas Plus",
+  "description": "Operações, fechamento mensal e portal do parceiro.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
