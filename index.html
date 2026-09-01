@@ -190,8 +190,8 @@ dialog::backdrop{background:rgba(10,30,50,.45)}
 .cia-foot{padding:7px 12px;font-size:10.5px;color:var(--muted);background:#F7F9FB}
 
 /* 3 mini extrato */
-.acc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px}
-.acc{border:1px solid #DDE3EA;border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+.acc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px}
+.acc{border:1px solid #DDE3EA;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;min-width:0}
 .acc-head{padding:9px 10px;color:#fff;display:flex;align-items:center;gap:8px}
 .acc-head .av{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.16);display:grid;place-items:center;flex:none}
 .acc-head .av svg{width:13px;height:13px;stroke:#fff;fill:none;stroke-width:1.9}
@@ -199,19 +199,21 @@ dialog::backdrop{background:rgba(10,30,50,.45)}
 .acc-head > div > b{display:block;font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
 .acc-head span{display:block;font-size:9.5px;opacity:.85;line-height:1.3;margin-top:1px;min-height:25px}
 .acc-head span b{display:inline;font-size:inherit;text-transform:none;font-weight:800}
-.acc table{width:100%;border-collapse:collapse;font-size:10.5px}
+.acc table{width:100%;border-collapse:collapse;font-size:10.5px;table-layout:fixed}
 .acc thead th{
-  color:#fff;font-size:8.5px;font-weight:800;letter-spacing:.05em;padding:5px 6px;text-align:left;
+  color:#fff;font-size:.81em;font-weight:800;letter-spacing:.03em;padding:5px 5px;text-align:left;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 .acc thead th:last-child{text-align:right}
-.acc tbody td{padding:6px;border-bottom:1px solid #EFF2F5;white-space:nowrap}
+.acc tbody td{padding:6px 5px;border-bottom:1px solid #EFF2F5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .acc tbody td:nth-child(3){text-align:center;color:var(--muted)}
 .acc tbody td:last-child{text-align:right;font-weight:700;color:var(--green-dark);font-variant-numeric:tabular-nums}
 .acc tbody td:first-child{font-weight:800}
 .acc tbody td:nth-child(2){color:#4A5C6E}
 .dots{display:inline-flex;gap:2px;background:#EDF0F3;border-radius:999px;padding:3px 5px;vertical-align:middle}
 .dots i{width:3px;height:3px;border-radius:50%;background:#9AA9B7;display:block}
-.acc tfoot td{padding:8px 5px;font-weight:800;font-size:9.5px;border-top:1px solid #DDE3EA;white-space:nowrap}
+.acc tfoot td{padding:8px 5px;font-weight:800;font-size:.9em;border-top:1px solid #DDE3EA;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .acc tfoot td:first-child{letter-spacing:.02em}
 .acc tfoot td:nth-child(2){text-align:center;color:#3A4C5E}
 .acc tfoot td:last-child{text-align:right;color:var(--green-dark);font-variant-numeric:tabular-nums}
@@ -760,17 +762,18 @@ function renderReport(){
             <div><b>${esc(a.conta.nome)}</b><span>${subtituloConta(a)}</span></div>
           </div>
           <table>
-            <thead><tr style="background:${cor}dd"><th>CIA</th><th>Fonte</th><th style="text-align:center">Lanç.</th><th>Resultado</th></tr></thead>
+            <colgroup><col style="width:21%"><col style="width:26%"><col style="width:15%"><col style="width:38%"></colgroup>
+            <thead><tr style="background:${cor}dd"><th>CIA</th><th>Fonte</th><th class="num" style="text-align:center">Qtd.</th><th class="num">Resultado</th></tr></thead>
             <tbody>
               ${a.linhas.map(l=>`<tr>
                 <td style="color:${ciaColor(l.cia)}">${esc(l.cia)}</td>
-                <td>${esc(l.fonte)}</td><td>${l.qtd}</td><td>${money(l.valor)}</td></tr>`).join('')}
+                <td>${esc(l.fonte)}</td><td class="num">${l.qtd}</td><td class="num">${money(l.valor)}</td></tr>`).join('')}
               ${a.outros?`<tr><td><span class="dots"><i></i><i></i><i></i></span></td>
-                <td>Outros</td><td>${a.outros.qtd}</td><td>${money(a.outros.valor)}</td></tr>`:''}
+                <td>Outros</td><td class="num">${a.outros.qtd}</td><td class="num">${money(a.outros.valor)}</td></tr>`:''}
             </tbody>
             <tfoot><tr style="background:${cor}14">
               <td colspan="2" style="color:${cor}">TOTAL ${esc(a.conta.nome.toUpperCase())}</td>
-              <td>${a.qtd}</td><td>${money(a.total)}</td>
+              <td class="num">${a.qtd}</td><td class="num">${money(a.total)}</td>
             </tr></tfoot>
           </table>
           <div class="grow"></div>
@@ -818,11 +821,31 @@ function renderReport(){
   requestAnimationFrame(ajustarEscala);
 }
 
+/* reduz a fonte do mini extrato quando o texto não cabe na coluna
+   (nomes longos, muitas contas ou fonte do sistema mais larga que a Inter) */
+function ajustarExtratos(){
+  document.querySelectorAll('.acc').forEach(acc=>{
+    const t = acc.querySelector('table');
+    if(!t) return;
+    t.style.fontSize = '';
+    let fs = parseFloat(getComputedStyle(t).fontSize) || 10.5;
+    // nomes de conta e fonte podem ser abreviados com reticências;
+    // quantidade e resultado, não — são eles que definem a redução
+    const cortando = () => [...t.querySelectorAll('.num')].some(c=>c.scrollWidth > c.clientWidth + 1);
+    let guarda = 0;
+    while(cortando() && fs > 9 && guarda++ < 6){
+      fs -= 0.5;
+      t.style.fontSize = fs + 'px';
+    }
+  });
+}
+
 /* ajusta o relatório (640px fixos) à largura da tela */
 function ajustarEscala(){
   const box = document.querySelector('.report-scroll');
   const rep = el('report');
   if(!box || !rep) return;
+  ajustarExtratos();
   rep.style.transform = 'none';
   box.style.height = 'auto';
   const disp = box.clientWidth;
