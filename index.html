@@ -1970,6 +1970,8 @@ function renderCadastros(){
       </button>
       <div class="corpo">
         <div class="grid2" style="margin-top:12px">
+          <div class="field"><label>Nome do parceiro</label>
+            <input type="text" data-nome="${r.id}" value="${esc(r.nome)}" placeholder="ex.: Duarte"></div>
           <div class="field"><label>E-mail (login Google)</label>
             <input type="email" data-email="${r.id}" value="${esc(r.email||'')}" placeholder="parceiro@gmail.com"></div>
           <div class="field"><label>Telefone (WhatsApp)</label>
@@ -1992,6 +1994,15 @@ function renderCadastros(){
     b.closest('.acordeao').classList.toggle('aberto', abertos.has(id));
   });
 
+  // o nome muda ao sair do campo: renomear a cada tecla tiraria o foco,
+  // porque a lista se reordena em ordem alfabética
+  el('listaResps').querySelectorAll('[data-nome]').forEach(i=>i.onchange=()=>{
+    const r = respById(i.dataset.nome), novo = i.value.trim();
+    if(!novo){ i.value = r.nome; return; }
+    if(novo === r.nome) return;
+    r.nome = novo;
+    save(); refreshAll();
+  });
   el('listaResps').querySelectorAll('[data-email]').forEach(i=>i.onchange=()=>{ respById(i.dataset.email).email=i.value.trim().toLowerCase(); save(); renderAcessos(); });
   el('listaResps').querySelectorAll('[data-tel]').forEach(i=>i.onchange=()=>{ respById(i.dataset.tel).tel=i.value.trim(); save(); renderAcessos(); });
   el('listaResps').querySelectorAll('[data-pix]').forEach(i=>i.onchange=()=>{ respById(i.dataset.pix).pix=i.value.trim(); save(); renderFinanceiro(); });
