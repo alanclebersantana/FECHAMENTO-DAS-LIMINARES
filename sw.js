@@ -1,4 +1,4 @@
-const CACHE = 'mp-central-v3';
+const CACHE = 'mp-central-v2';
 const ASSETS = ['./','./index.html','./manifest.json','./logo.png',
   './icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png'];
 
@@ -23,8 +23,10 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   if (/googleapis|gstatic|firebase/.test(url.hostname)) return;
 
+  // A página sempre é buscada na rede primeiro. Sem isso, uma publicação
+  // nova pode continuar servindo a versão antiga guardada no cache.
   if (req.mode === 'navigate') {
-    e.respondWith(fetch(req)
+    e.respondWith(fetch(req, { cache: 'no-store' })
       .then(r => { const c = r.clone(); caches.open(CACHE).then(x => x.put(req, c)); return r; })
       .catch(() => caches.match('./index.html')));
     return;

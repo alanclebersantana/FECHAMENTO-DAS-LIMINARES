@@ -198,11 +198,11 @@ dialog::backdrop{background:rgba(10,30,50,.45)}
 
 /* cabeçalho */
 .r-head{display:flex;align-items:center;gap:12px;padding:12px 14px}
-.logo{width:44px;height:44px;border-radius:9px;background:var(--gold);display:grid;place-items:center;flex:none}
+.logo{width:46px;height:46px;border-radius:10px;flex:none;object-fit:contain}
 .logo svg{width:28px;height:28px}
 .logo-txt{line-height:1;flex:none}
 .logo-txt b{display:block;font-size:calc(19px * var(--escala));font-weight:900;color:var(--navy-txt);letter-spacing:.02em}
-.logo-txt i{display:block;font-style:normal;font-size:calc(12px * var(--escala));font-weight:800;color:#95A5B5;letter-spacing:.28em}
+.logo-txt i{display:block;font-style:normal;font-size:calc(12px * var(--escala));font-weight:800;color:#D9A310;letter-spacing:.28em;margin-top:2px}
 .r-title{flex:1;min-width:0}
 .r-title h2{font-size:calc(19px * var(--escala));font-weight:800;color:var(--navy-txt);line-height:1.15}
 .r-title p{margin:5px 0 0;font-size:calc(12px * var(--escala));color:var(--muted);display:flex;align-items:center;gap:6px}
@@ -671,14 +671,8 @@ body.parceiro .subnav{display:none}
       <div class="grid2">
         <div class="field"><label for="opData">Data</label><input type="date" id="opData"></div>
         <div class="field"><label for="opRef">Referência da promoção</label><input type="text" id="opRef" placeholder="LIVELO SMILES – 80%"></div>
-        <div class="field">
-          <label for="opCia">CIA / programa <button type="button" class="mini-add" data-novo="cia">+ nova</button></label>
-          <select id="opCia"></select>
-        </div>
-        <div class="field">
-          <label for="opFonte">Fornecedor dos pontos <button type="button" class="mini-add" data-novo="fonte">+ novo</button></label>
-          <select id="opFonte"></select>
-        </div>
+        <div class="field"><label for="opCia">CIA / programa</label><select id="opCia"></select></div>
+        <div class="field"><label for="opFonte">Fornecedor dos pontos</label><select id="opFonte"></select></div>
         <div class="field"><label for="opCpmVenda">CPM venda (R$/milheiro)</label><input type="number" id="opCpmVenda" step="0.01" value="16.00"></div>
         <div class="field"><label for="opModo">Informar custo por</label><select id="opModo"><option value="total">Custo total da operação</option><option value="cpm">CPM de custo</option><option value="sem">Sem custo</option></select></div>
         <div class="field" id="wrapCustoTotal"><label for="opCustoTotal">Custo total (R$)</label><input type="number" id="opCustoTotal" step="0.01" placeholder="21000,00"></div>
@@ -1316,11 +1310,7 @@ function renderReport(){
   R.innerHTML = `
   <div class="rcard">
     <div class="r-head">
-      <div class="logo"><svg viewBox="0 0 32 32" fill="none">
-        <rect x="3" y="3" width="11" height="11" rx="2.5" fill="#12304C"/><rect x="18" y="3" width="11" height="11" rx="2.5" fill="#12304C"/>
-        <rect x="3" y="18" width="11" height="11" rx="2.5" fill="#12304C"/><rect x="18" y="18" width="11" height="11" rx="2.5" fill="#12304C"/>
-        <path d="M6 11.5 8.5 6l2.5 5.5M21 6v5.5M21 6l2.5 3 2.5-3M6 26.5 8.5 21l2.5 5.5M21 21h4l-4 5.5h4" stroke="#F2C230" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg></div>
+      <img src="logo.png" alt="Milhas Plus" class="logo">
       <div class="logo-txt"><b>MILHAS</b><i>PLUS</i></div>
       <div class="r-title">
         <h2>${esc(S.cfg.titulo||'Fechamento Mensal')}${nomeDestaque()?' – '+esc(nomeDestaque()):''}</h2>
@@ -1560,17 +1550,11 @@ function renderMulti(prefixo, campo, estado){
 document.addEventListener('click', e=>{
   const b = e.target.closest('.mini-add'); if(!b) return;
   const tipo = b.dataset.novo;
-  const rotulos = {cia:'companhia / programa', fonte:'fornecedor de pontos', tipo:'tipo de operação', investidor:'investidor'};
+  const rotulos = {tipo:'tipo de operação', investidor:'investidor'};
   const nome = (prompt('Nome do novo ' + rotulos[tipo] + ':') || '').trim();
   if(!nome) return;
 
-  if(tipo==='cia'){
-    if(!S.cias.some(c=>c.nome.toLowerCase()===nome.toLowerCase())) S.cias.push({nome, cor:'#12304C'});
-    save(); preencherSelects(); el('opCia').value = nome;
-  } else if(tipo==='fonte'){
-    if(!S.fontes.includes(nome)) S.fontes.push(nome);
-    save(); preencherSelects(); el('opFonte').value = nome;
-  } else if(tipo==='tipo'){
+  if(tipo==='tipo'){
     if(!S.tiposOp.includes(nome)) S.tiposOp.push(nome);
     selOp.tipos.push({nome, detalhe:'', valor:null});
     save(); renderMulti('op','tipos',selOp);
@@ -2412,6 +2396,25 @@ window.__mostrarLogin = function(msg){
   if(!msg) el('diag').hidden = true;
 };
 
+/* O Firebase só aceita login vindo de domínios liberados no console.
+   Ao publicar num endereço novo, este é o erro que aparece. */
+window.__dominioNaoAutorizado = function(host){
+  diagFixo = true;
+  el('loginParceiro').hidden = false;
+  el('avisoLogin').className = 'erro';
+  el('avisoLogin').hidden = false;
+  el('avisoLogin').textContent = 'Este endereço ainda não está liberado no Firebase.';
+  el('diag').hidden = false;
+  el('diag').innerHTML = `
+    <h4>Falta liberar o domínio</h4>
+    <p>No console do Firebase, em <b>Authentication → Settings → Domínios autorizados</b>,
+       clique em <b>Adicionar domínio</b> e inclua exatamente:</p>
+    ${blocoUid(host)}
+    <p>Depois recarregue esta página. Cada endereço onde o app for publicado precisa entrar nessa lista.</p>
+    ${rodapeDiag()}`;
+  ligarCopiaUid(host); ligarAcoesDiag();
+};
+
 window.__avisoTopo = function(html){
   el('avisoTopoTxt').innerHTML = html;
   el('avisoTopo').hidden = false;
@@ -2674,8 +2677,21 @@ if (window.MP_USA_FIREBASE) {
 
   /* ---------------- login ---------------- */
   document.getElementById('btnGoogle').onclick = async () => {
-    try { await signInWithPopup(auth, new GoogleAuthProvider()); }
-    catch (e) { window.__mostrarLogin('Não foi possível entrar: ' + (e.code || e.message)); }
+    try {
+      await signInWithPopup(auth, new GoogleAuthProvider());
+    } catch (e) {
+      const cod = e.code || e.message;
+      if (cod === 'auth/unauthorized-domain') {
+        // acontece ao publicar num domínio novo (Netlify, domínio próprio…)
+        window.__dominioNaoAutorizado(location.hostname);
+      } else if (cod === 'auth/popup-blocked') {
+        window.__mostrarLogin('O navegador bloqueou a janela do Google. Libere os pop-ups deste site e tente de novo.');
+      } else if (cod === 'auth/popup-closed-by-user' || cod === 'auth/cancelled-popup-request') {
+        window.__mostrarLogin('');
+      } else {
+        window.__mostrarLogin('Não foi possível entrar: ' + cod);
+      }
+    }
   };
   document.getElementById('btnSair').onclick = async () => {
     sessionStorage.clear();

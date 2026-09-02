@@ -29,7 +29,11 @@ Nesse ponto o app já funciona, mas gravando só no aparelho. Para os parceiros 
 1. Em <https://console.firebase.google.com>, crie um projeto.
 2. **Criação → Firestore Database → Criar banco de dados**, modo produção, região `southamerica-east1`.
 3. **Criação → Authentication → Começar → Google** e ative.
-4. Ainda em Authentication, aba **Settings → Domínios autorizados**, adicione o domínio do GitHub Pages (`seuusuario.github.io`).
+4. Ainda em Authentication, aba **Settings → Domínios autorizados**, adicione **cada endereço** onde o app for publicado. Hoje são dois:
+   - `alanclebersantana.github.io`
+   - `mpliminares.netlify.app`
+
+   O login com Google só funciona em domínio liberado. Se faltar, o app mostra o domínio exato para copiar.
 
 ### 2.2 Credenciais
 
