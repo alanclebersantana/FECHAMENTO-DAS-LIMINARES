@@ -942,13 +942,39 @@ function load(){ try{ const r = localStorage.getItem(KEY); if(r) return JSON.par
 /* Grava no aparelho e, quando o Firebase está configurado, envia para a nuvem.
    O envio é adiado para não disparar uma escrita a cada tecla digitada. */
 let timerSync = null;
+let estadoSync = {situacao:'ocioso', quando:null, erro:null};
+
 function save(){
   try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
   if(window.MPSync && MPSync.pronto && !parceiroLogado){
     clearTimeout(timerSync);
-    timerSync = setTimeout(()=>MPSync.enviar(S).catch(e=>console.warn('sync:',e)), 700);
+    marcarSync('pendente');
+    timerSync = setTimeout(enviarAgora, 500);
   }
 }
+
+async function enviarAgora(){
+  clearTimeout(timerSync);
+  if(!(window.MPSync && MPSync.pronto) || parceiroLogado) return;
+  marcarSync('enviando');
+  try{
+    await MPSync.enviar(S);
+    marcarSync('ok');
+  }catch(e){
+    console.error('sync:', e);
+    marcarSync('erro', e.code || e.message);
+  }
+}
+
+function marcarSync(situacao, erro){
+  estadoSync = {situacao, quando:new Date(), erro:erro||null};
+  renderStatusNuvem();
+}
+
+/* Se a página for fechada ou trocada com algo ainda por enviar,
+   manda antes de sair — senão a alteração se perde. */
+window.addEventListener('beforeunload', ()=>{ if(estadoSync.situacao==='pendente') enviarAgora(); });
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden && estadoSync.situacao==='pendente') enviarAgora(); });
 
 /* ---------------- dados de exemplo ---------------- */
 function seed(){
@@ -2189,8 +2215,22 @@ function renderStatusNuvem(){
   const box = el('statusNuvem'); if(!box) return;
   if(window.MP_USA_FIREBASE){
     const u = window.MPSync && MPSync.usuario;
-    box.innerHTML = `<div class="nuvem"><i class="on"></i> Sincronizando com o Firebase</div>
-      <p class="hint" style="margin:8px 0 0">Conectado como <b>${esc(u||'—')}</b>. Os dados ficam na nuvem e aparecem em qualquer aparelho.</p>`;
+    const hora = estadoSync.quando ? estadoSync.quando.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : null;
+    const rotulos = {
+      ocioso:   ['on',  'Sincronizando com o Firebase'],
+      pendente: ['off', 'Alterações a enviar…'],
+      enviando: ['off', 'Enviando…'],
+      ok:       ['on',  'Tudo salvo na nuvem' + (hora ? ' — ' + hora : '')],
+      erro:     ['off', 'Falha ao salvar']
+    };
+    const [cor, texto] = rotulos[estadoSync.situacao] || rotulos.ocioso;
+    box.innerHTML = `<div class="nuvem"><i class="${cor}"></i> ${esc(texto)}</div>
+      <p class="hint" style="margin:8px 0 0">Conectado como <b>${esc(u||'—')}</b>. Os dados ficam na nuvem e aparecem em qualquer aparelho.</p>
+      ${estadoSync.erro ? `<div class="lockbar" style="margin-top:10px">
+        <b>O banco recusou a gravação:</b> <code>${esc(estadoSync.erro)}</code>.
+        Confira se as regras do <code>firestore.rules</code> estão publicadas e se a sua conta está em <code>admins</code>.</div>` : ''}
+      <div class="toolbar" style="margin:12px 0 0"><button class="btn alt acao-min" id="btnSalvarAgora">Salvar agora</button></div>`;
+    const b = el('btnSalvarAgora'); if(b) b.onclick = enviarAgora;
   }else{
     box.innerHTML = `<div class="nuvem"><i class="off"></i> Somente neste aparelho</div>
       <p class="hint" style="margin:8px 0 0">O Firebase ainda não foi configurado no arquivo <b>index.html</b>. Os dados ficam só neste navegador — faça backup antes de trocar de aparelho.</p>`;
@@ -2551,12 +2591,12 @@ if (window.MP_USA_FIREBASE) {
     } catch (e) { e.colecao = nome; throw e; }
   };
 
-  const vazio = {
+  const vazioBase = () => ({
     responsaveis: [], contas: [], cias: [], fontes: [], operacoes: [],
     lancamentos: [], pagamentos: [], fechados: [], ocultas: [],
     cfg: { titulo: 'Fechamento Mensal', destaque: 'auto', topN: 3 },
     filtro: { resp: 'todos', cia: 'todas', fonte: 'todas', min: '', max: '' }
-  };
+  });
 
   async function carregarConfig() {
     const s = await getDoc(doc(db, 'config', 'geral'));
@@ -2570,15 +2610,16 @@ if (window.MP_USA_FIREBASE) {
     ]);
     const mapaCusto = Object.fromEntries(custos.map(c => [c.id, c]));
     return {
-      ...vazio,
+      ...vazioBase(),
       responsaveis: parceiros,
       contas,
       operacoes,
       lancamentos: lancamentos.map(l => ({ ...l, ...(mapaCusto[l.id] || { custo: 0, cpmCusto: 0 }) })),
       pagamentos,
       cias: cfg.cias || [], fontes: cfg.fontes || [],
+      tiposOp: cfg.tiposOp || [], investidoresOp: cfg.investidoresOp || [],
       fechados: cfg.fechados || [],
-      cfg: cfg.cfg || vazio.cfg
+      cfg: cfg.cfg || {titulo:'Fechamento Mensal', destaque:'auto', topN:3}
     };
   }
 
@@ -2593,13 +2634,14 @@ if (window.MP_USA_FIREBASE) {
     ]);
     return {
       estado: {
-        ...vazio,
+        ...vazioBase(),
         responsaveis: [meu], contas,
         // sem custo: esses campos ficam zerados para o parceiro
         lancamentos: lancamentos.map(l => ({ ...l, custo: 0, cpmCusto: 0 })),
         pagamentos,
         cias: cfg.cias || [], fontes: cfg.fontes || [],
-        fechados: cfg.fechados || [], cfg: cfg.cfg || vazio.cfg
+        tiposOp: cfg.tiposOp || [], investidoresOp: cfg.investidoresOp || [],
+        fechados: cfg.fechados || [], cfg: cfg.cfg || {titulo:'Fechamento Mensal', destaque:'auto', topN:3}
       },
       rid: meu.id
     };
@@ -2619,7 +2661,8 @@ if (window.MP_USA_FIREBASE) {
   /* ---------------- envio das alterações ---------------- */
   let anterior = {};
   const chave = (col, id) => col + '/' + id;
-  const limpo = o => JSON.parse(JSON.stringify(o, (k, v) => v === undefined ? null : v));
+  const limpo   = o => JSON.parse(JSON.stringify(o, (k, v) => v === undefined ? null : v));
+  const clonar  = o => JSON.parse(JSON.stringify(o, (k, v) => v === undefined ? null : v));
 
   function docsDoEstado(S) {
     // quando o parceiro ainda não tem e-mail vinculado, gravamos um valor
@@ -2649,8 +2692,19 @@ if (window.MP_USA_FIREBASE) {
     S.pagamentos.forEach(p => out[chave('pagamentos', p.id)] =
       { respId: p.respId, respEmail: emailDe(p.respId), mes: p.mes, valor: p.valor, data: p.data, por: p.por || '', comprovante: p.comprovante || '' });
     S.responsaveis.filter(r => r.codigo).forEach(r => out[chave('convites', r.codigo)] = { respId: r.id });
-    out[chave('config', 'geral')] = { cias: S.cias, fontes: S.fontes, fechados: S.fechados, cfg: S.cfg };
-    return out;
+    // cópias, nunca as listas vivas: guardar a referência faria a foto do
+    // "estado anterior" mudar junto com o estado atual, e a comparação
+    // concluiria que nada mudou — era por isso que companhias e
+    // fornecedores não eram gravados.
+    out[chave('config', 'geral')] = {
+      cias:            (S.cias || []).map(c => ({ ...c })),
+      fontes:          [...(S.fontes || [])],
+      tiposOp:         [...(S.tiposOp || [])],
+      investidoresOp:  [...(S.investidoresOp || [])],
+      fechados:        [...(S.fechados || [])],
+      cfg:             { ...(S.cfg || {}) }
+    };
+    return clonar(out);
   }
 
   async function enviar(S) {
@@ -2669,6 +2723,7 @@ if (window.MP_USA_FIREBASE) {
     }
     if (n) await lote.commit();
     anterior = atual;
+    return n;
   }
 
   window.MPSync = { pronto: false, usuario: null, enviar };
