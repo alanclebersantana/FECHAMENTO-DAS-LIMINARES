@@ -3,19 +3,24 @@ rules_version = '2';
 // ============================================================
 //  Central Milhas Plus — regras do Firestore
 //
-//  Princípio: o administrador enxerga tudo. O parceiro enxerga
-//  apenas os documentos que carregam o e-mail dele no campo
-//  respEmail, e nunca as coleções que contêm custo.
+//  O administrador enxerga tudo. O parceiro enxerga apenas os
+//  documentos que carregam o e-mail dele no campo respEmail, e
+//  nunca as coleções que contêm custo.
 //
-//  O app grava respEmail em contas, lançamentos e pagamentos a
-//  cada sincronização, então a comparação abaixo é direta e não
-//  precisa de leituras extras (que seriam cobradas).
+//  IMPORTANTE — por que as comparações são "cruas":
+//  numa consulta (list), o Firestore não filtra os documentos:
+//  ele confere se os filtros da consulta garantem a regra. Por
+//  isso a condição precisa ser exatamente
+//      resource.data.<campo> == request.auth.token.email
+//  para casar com  where('<campo>','==', email)  no app.
+//  Qualquer transformação (.lower()) ou verificação extra no
+//  meio (!= null, != '') impede esse casamento e a consulta
+//  inteira é negada. O app grava os e-mails já em minúsculas.
 // ============================================================
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ---------- auxiliares ----------
     function logado() {
       return request.auth != null;
     }
@@ -24,20 +29,8 @@ service cloud.firestore {
       return logado() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    function meuEmail() {
-      return logado() ? request.auth.token.email.lower() : '';
-    }
-
-    // o documento pertence a quem está pedindo
-    function meu() {
-      return logado()
-        && resource.data.respEmail != null
-        && resource.data.respEmail != ''
-        && resource.data.respEmail == meuEmail();
-    }
-
     // ---------- quem é administrador ----------
-    // Crie o primeiro documento pelo console:  admins/<UID>  { }
+    // Crie o primeiro pelo console:  admins/<UID>  { }
     // Ninguém consegue se promover pelo app.
     match /admins/{uid} {
       allow read:  if logado() && request.auth.uid == uid;
@@ -45,39 +38,39 @@ service cloud.firestore {
     }
 
     // ---------- parceiros ----------
-    // O parceiro lê e lista apenas o próprio cadastro.
-    // No 1º acesso, pode gravar o próprio e-mail no cadastro que
-    // ainda está vago — e nada além disso.
+    // O parceiro consulta com where('email','==', seuEmail).
+    // No 1º acesso pode gravar o próprio e-mail no cadastro que
+    // ainda está vago — e nada além desse campo.
     match /parceiros/{id} {
       allow read: if admin()
-                  || (logado() && resource.data.email == meuEmail());
+                  || resource.data.email == request.auth.token.email;
 
       allow create, delete: if admin();
 
       allow update: if admin()
         || (
           logado()
-          && (resource.data.email == '' || resource.data.email == null)
-          && request.resource.data.email == meuEmail()
+          && resource.data.email == ''
+          && request.resource.data.email == request.auth.token.email
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email'])
         );
     }
 
     // ---------- contas ----------
     match /contas/{id} {
-      allow read:  if admin() || meu();
+      allow read:  if admin() || resource.data.respEmail == request.auth.token.email;
       allow write: if admin();
     }
 
     // ---------- lançamentos ----------
-    // Sem campos de custo: o parceiro vê milhas, valor e resultado.
+    // Sem campos de custo: milhas, valor e resultado.
     match /lancamentos/{id} {
-      allow read:  if admin() || meu();
+      allow read:  if admin() || resource.data.respEmail == request.auth.token.email;
       allow write: if admin();
     }
 
     // ---------- custo por lançamento ----------
-    // Fica separado justamente para poder ser negado ao parceiro.
+    // Separado justamente para poder ser negado ao parceiro.
     match /custos/{id} {
       allow read, write: if admin();
     }
@@ -90,26 +83,22 @@ service cloud.firestore {
 
     // ---------- pagamentos ----------
     match /pagamentos/{id} {
-      allow read:  if admin() || meu();
+      allow read:  if admin() || resource.data.respEmail == request.auth.token.email;
       allow write: if admin();
     }
 
     // ---------- configuração compartilhada ----------
-    // Companhias, fornecedores e preferências do relatório.
-    // Qualquer usuário autenticado lê; só o administrador grava.
     match /config/{doc} {
       allow read:  if logado();
       allow write: if admin();
     }
 
     // ---------- convites ----------
-    // Mapeia o código enviado ao parceiro para o cadastro dele.
-    // Leitura só por id exato (nunca listagem), para que ninguém
-    // consiga varrer os códigos existentes.
+    // Leitura só por id exato, nunca listagem.
     match /convites/{codigo} {
-      allow get:    if logado();
-      allow list:   if admin();
-      allow write:  if admin();
+      allow get:   if logado();
+      allow list:  if admin();
+      allow write: if admin();
     }
 
     // ---------- porta fechada ----------

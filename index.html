@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-tema="claro">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#12304C">
-<title>Central Milhas Plus</title>
+<title>Milhas Plus — controle de liminares</title>
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="icons/icon-192.png">
+<link rel="icon" href="logo.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -36,6 +36,7 @@
 :root{
   --navy:#12304C;
   --navy-2:#1B4266;
+  --navy-txt:#12304C;   /* mesma marca, mas legível como texto no modo escuro */
   --gold:#F2C230;
   --green:#16A34A;
   --green-dark:#0F7A38;
@@ -43,11 +44,39 @@
   --muted:#6B7C8C;
   --line:#DDE3EA;
   --bg:#EDEFF2;
+  --card:#FFFFFF;
+  --campo:#FFFFFF;
+  --sutil:#F4F7FA;
   --cream:#FBFAF6;
   --teal:#12494C;
   --forest:#16463A;
   --radius:10px;
+  --escala:1;
   --shadow:0 1px 2px rgba(18,48,76,.08), 0 4px 14px rgba(18,48,76,.06);
+}
+
+/* ---------- modo escuro (a interface; o relatório continua claro) ---------- */
+html[data-tema="escuro"]{
+  --ink:#E8EFF5;
+  --muted:#9BADBC;
+  --line:#2C3846;
+  --bg:#0F151C;
+  --card:#182029;
+  --campo:#0D131A;
+  --sutil:#1E2732;
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 4px 14px rgba(0,0,0,.35);
+}
+
+/* As paletas são aplicadas por JS (lista PALETAS no script),
+   para as cores não ficarem duplicadas em dois lugares. */
+
+/* O relatório é um documento: continua claro e no tamanho de letra
+   original, para o PDF e a imagem saírem sempre iguais. */
+#report{
+  --ink:#0E2436; --muted:#6B7C8C; --line:#DDE3EA;
+  --bg:#EDEFF2; --card:#FFFFFF; --campo:#FFFFFF;
+  --sutil:#F4F7FA; --cream:#FBFAF6; --escala:1;
+  --navy-txt:var(--navy);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none !important}
@@ -55,7 +84,7 @@ html,body{margin:0;padding:0}
 body{
   font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   background:var(--bg);color:var(--ink);
-  font-size:15px;line-height:1.45;
+  font-size:calc(15px * var(--escala));line-height:1.45;
   padding-bottom:calc(72px + env(safe-area-inset-bottom));
 }
 button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
@@ -67,29 +96,29 @@ h1,h2,h3,h4{margin:0}
   padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
   display:flex;align-items:center;gap:10px;
 }
-.topbar .brand{font-weight:800;letter-spacing:.02em;font-size:15px}
+.topbar .brand{font-weight:800;letter-spacing:.02em;font-size:calc(15px * var(--escala))}
 .topbar .brand span{color:var(--gold)}
 .topbar .spacer{flex:1}
 .ghost{
   background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);color:#fff;
-  border-radius:8px;padding:7px 11px;font-size:13px;font-weight:600;cursor:pointer;
+  border-radius:8px;padding:7px 11px;font-size:calc(13px * var(--escala));font-weight:600;cursor:pointer;
 }
 .ghost:hover{background:rgba(255,255,255,.2)}
 
 .wrap{max-width:1080px;margin:0 auto;padding:14px}
 .tabbar{
-  position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;
+  position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--card);
   border-top:1px solid var(--line);display:flex;
   padding-bottom:env(safe-area-inset-bottom);
 }
 .tabbar button{
   flex:1;background:none;border:0;padding:10px 4px 12px;cursor:pointer;
   display:flex;flex-direction:column;align-items:center;gap:3px;
-  font-size:11px;font-weight:600;color:var(--muted);
+  font-size:calc(11px * var(--escala));font-weight:600;color:var(--muted);
 }
 .tabbar button svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-.tabbar button.on{color:var(--navy)}
-.tabbar button.on svg{stroke:var(--navy)}
+.tabbar button.on{color:var(--navy-txt)}
+.tabbar button.on svg{stroke:var(--navy-txt)}
 
 .panel{display:none}
 .panel.on{display:block}
@@ -98,64 +127,72 @@ h1,h2,h3,h4{margin:0}
 .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
 .btn{
   background:var(--navy);color:#fff;border:0;border-radius:8px;padding:9px 14px;
-  font-weight:600;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;
+  font-weight:600;font-size:calc(14px * var(--escala));cursor:pointer;display:inline-flex;align-items:center;gap:7px;
 }
 .btn:hover{background:var(--navy-2)}
-.btn.alt{background:#fff;color:var(--navy);border:1px solid var(--line)}
-.btn.alt:hover{background:#F4F6F9}
-.btn.danger{background:#fff;color:#B4232A;border:1px solid #F0C9CB}
+.btn.alt{background:var(--card);color:var(--navy-txt);border:1px solid var(--line)}
+.btn.alt:hover{background:var(--sutil)}
+.btn.danger{background:var(--card);color:#D9575E;border:1px solid var(--line)}
 .btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .field{display:flex;flex-direction:column;gap:5px}
-.field label{font-size:12px;font-weight:700;color:var(--muted)}
-input[type=text],input[type=date],input[type=number],input[type=month],select,textarea{
-  background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%;
+.field label{font-size:calc(12px * var(--escala));font-weight:700;color:var(--muted)}
+input[type=text],input[type=email],input[type=tel],input[type=url],input[type=search],
+input[type=password],input[type=date],input[type=number],input[type=month],input[type=time],
+select,textarea{
+  background:var(--campo);color:var(--ink);
+  border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%;
 }
+input::placeholder,textarea::placeholder{color:var(--muted);opacity:.9}
+html[data-tema="escuro"] select,
+html[data-tema="escuro"] input[type=date],
+html[data-tema="escuro"] input[type=month],
+html[data-tema="escuro"] input[type=color]{color-scheme:dark}
 input:focus,select:focus,textarea:focus{outline:2px solid #9FC2E0;outline-offset:1px;border-color:#9FC2E0}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
-.box{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-bottom:12px}
-.box h3{font-size:14px;margin-bottom:10px;color:var(--navy)}
-.empty{padding:26px 14px;text-align:center;color:var(--muted);font-size:14px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);margin-bottom:12px}
+.box h3{font-size:calc(14px * var(--escala));margin-bottom:10px;color:var(--navy-txt)}
+.empty{padding:26px 14px;text-align:center;color:var(--muted);font-size:calc(14px * var(--escala))}
 
-table.list{width:100%;border-collapse:collapse;font-size:13.5px}
+table.list{width:100%;border-collapse:collapse;font-size:calc(13.5px * var(--escala))}
 table.list th{
-  text-align:left;font-size:11px;color:var(--muted);font-weight:700;
+  text-align:left;font-size:calc(11px * var(--escala));color:var(--muted);font-weight:700;
   padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap;
 }
-table.list td{padding:8px;border-bottom:1px solid #EEF1F4;vertical-align:middle}
+table.list td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
 table.list tr:last-child td{border-bottom:0}
 .rowbtn{background:none;border:0;cursor:pointer;color:var(--muted);padding:4px}
 .rowbtn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.rowbtn:hover{color:var(--navy)}
+.rowbtn:hover{color:var(--navy-txt)}
 .money{font-variant-numeric:tabular-nums;font-weight:700;color:var(--green-dark);white-space:nowrap}
 .money.neg{color:#C0392B}
-.chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:700;background:#EEF2F6;color:var(--navy)}
+.chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:calc(11.5px * var(--escala));font-weight:700;background:var(--sutil);color:var(--navy-txt)}
 
-dialog{border:0;border-radius:14px;padding:0;width:min(520px,94vw);box-shadow:0 18px 60px rgba(10,30,50,.28)}
+dialog{border:0;border-radius:14px;padding:0;background:var(--card);color:var(--ink);width:min(520px,94vw);box-shadow:0 18px 60px rgba(10,30,50,.28)}
 dialog::backdrop{background:rgba(10,30,50,.45)}
 .dlg-head{background:var(--navy);color:#fff;padding:13px 16px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
-.dlg-head button{background:none;border:0;color:#fff;font-size:22px;line-height:1;cursor:pointer}
-.dlg-body{padding:16px;display:grid;gap:11px}
-.dlg-foot{padding:0 16px 16px;display:flex;gap:8px;justify-content:flex-end}
+.dlg-head button{background:none;border:0;color:#fff;font-size:calc(22px * var(--escala));line-height:1;cursor:pointer}
+.dlg-body{padding:16px;display:grid;gap:11px;background:var(--card)}
+.dlg-foot{padding:0 16px 16px;background:var(--card);display:flex;gap:8px;justify-content:flex-end}
 
 .pill-list{display:flex;flex-wrap:wrap;gap:7px}
 .pill{
-  display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);
-  border-radius:999px;padding:5px 6px 5px 12px;font-size:13px;font-weight:600;
+  display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);
+  border-radius:999px;padding:5px 6px 5px 12px;font-size:calc(13px * var(--escala));font-weight:600;
 }
-.pill button{background:none;border:0;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0 4px}
+.pill button{background:none;border:0;color:var(--muted);cursor:pointer;font-size:calc(16px * var(--escala));line-height:1;padding:0 4px}
 .pill button:hover{color:#B4232A}
 .checkrow{display:flex;flex-wrap:wrap;gap:6px}
 .checkrow label{
-  display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);
-  border-radius:999px;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;
+  display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);
+  border-radius:999px;padding:6px 12px;font-size:calc(13px * var(--escala));font-weight:600;cursor:pointer;
 }
-.checkrow input{accent-color:var(--navy)}
+.checkrow input{accent-color:var(--navy-txt)}
 
 /* ================= RELATÓRIO ================= */
 .report-scroll{overflow-x:auto;padding-bottom:6px}
 #report{
   width:640px;background:var(--bg);padding:12px;margin:0 auto;
-  font-size:13px;
+  font-size:calc(13px * var(--escala));
 }
 .rcard{background:#fff;border:1px solid #D9E0E7;border-radius:var(--radius);margin-bottom:10px;overflow:hidden}
 
@@ -164,15 +201,15 @@ dialog::backdrop{background:rgba(10,30,50,.45)}
 .logo{width:44px;height:44px;border-radius:9px;background:var(--gold);display:grid;place-items:center;flex:none}
 .logo svg{width:28px;height:28px}
 .logo-txt{line-height:1;flex:none}
-.logo-txt b{display:block;font-size:19px;font-weight:900;color:var(--navy);letter-spacing:.02em}
-.logo-txt i{display:block;font-style:normal;font-size:12px;font-weight:800;color:#95A5B5;letter-spacing:.28em}
+.logo-txt b{display:block;font-size:calc(19px * var(--escala));font-weight:900;color:var(--navy-txt);letter-spacing:.02em}
+.logo-txt i{display:block;font-style:normal;font-size:calc(12px * var(--escala));font-weight:800;color:#95A5B5;letter-spacing:.28em}
 .r-title{flex:1;min-width:0}
-.r-title h2{font-size:19px;font-weight:800;color:var(--navy);line-height:1.15}
-.r-title p{margin:5px 0 0;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.r-title h2{font-size:calc(19px * var(--escala));font-weight:800;color:var(--navy-txt);line-height:1.15}
+.r-title p{margin:5px 0 0;font-size:calc(12px * var(--escala));color:var(--muted);display:flex;align-items:center;gap:6px}
 .r-title p svg{width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:1.8}
-.r-title p b{color:var(--navy);font-weight:700}
+.r-title p b{color:var(--navy-txt);font-weight:700}
 .datepill{
-  background:var(--navy);color:#fff;border-radius:8px;padding:8px 13px;font-weight:700;font-size:13px;
+  background:var(--navy);color:#fff;border-radius:8px;padding:8px 13px;font-weight:700;font-size:calc(13px * var(--escala));
   display:flex;align-items:center;gap:7px;flex:none;
 }
 .datepill svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:1.8}
@@ -180,33 +217,33 @@ dialog::backdrop{background:rgba(10,30,50,.45)}
 /* barra de seção numerada */
 .sec{background:var(--navy);color:#fff;padding:9px 12px;display:flex;align-items:center;gap:9px}
 .sec i{
-  width:19px;height:19px;border-radius:50%;background:var(--gold);color:var(--navy);
-  font-style:normal;font-weight:800;font-size:12px;display:grid;place-items:center;flex:none;
+  width:19px;height:19px;border-radius:50%;background:var(--gold);color:var(--navy-txt);
+  font-style:normal;font-weight:800;font-size:calc(12px * var(--escala));display:grid;place-items:center;flex:none;
 }
-.sec h3{font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.sec h3{font-size:calc(12.5px * var(--escala));font-weight:800;letter-spacing:.06em;text-transform:uppercase}
 
 .cols{display:grid;grid-template-columns:1fr 1.08fr;gap:10px;margin-bottom:10px}
 .cols > .rcard{margin-bottom:0}
 
 /* 1 resultado do mês */
 .res-body{background:var(--cream);padding:26px 16px 22px;text-align:center;height:calc(100% - 37px)}
-.res-value{font-size:36px;font-weight:800;color:var(--green);letter-spacing:-.02em;line-height:1}
-.res-note{margin-top:14px;font-size:12.5px;color:#33465A;display:flex;align-items:center;justify-content:center;gap:7px}
+.res-value{font-size:calc(36px * var(--escala));font-weight:800;color:var(--green);letter-spacing:-.02em;line-height:1}
+.res-note{margin-top:14px;font-size:calc(12.5px * var(--escala));color:#33465A;display:flex;align-items:center;justify-content:center;gap:7px}
 .res-note svg{width:16px;height:16px;flex:none}
 
 /* 2 companhias */
 .cia-row{display:flex;align-items:center;gap:10px;padding:11px 12px;border-bottom:1px solid #EDF0F3}
-.cia-name{width:96px;flex:none;font-size:18px;font-weight:900;letter-spacing:-.02em}
+.cia-name{width:96px;flex:none;font-size:calc(18px * var(--escala));font-weight:900;letter-spacing:-.02em}
 .cia-mid{flex:1;min-width:0}
-.cia-mid span{display:block;font-size:11px;color:var(--muted)}
-.cia-mid b{display:block;font-size:15px;font-weight:800;color:var(--green-dark);font-variant-numeric:tabular-nums}
+.cia-mid span{display:block;font-size:calc(11px * var(--escala));color:var(--muted)}
+.cia-mid b{display:block;font-size:calc(15px * var(--escala));font-weight:800;color:var(--green-dark);font-variant-numeric:tabular-nums}
 .donut{width:48px;height:48px;flex:none;position:relative}
 .donut svg{transform:rotate(-90deg)}
 .donut em{
   position:absolute;inset:0;display:grid;place-items:center;font-style:normal;
-  font-size:9.5px;font-weight:800;color:var(--navy);
+  font-size:calc(9.5px * var(--escala));font-weight:800;color:var(--navy-txt);
 }
-.cia-foot{padding:7px 12px;font-size:10.5px;color:var(--muted);background:#F7F9FB}
+.cia-foot{padding:7px 12px;font-size:calc(10.5px * var(--escala));color:var(--muted);background:var(--sutil)}
 
 /* 3 mini extrato */
 .acc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px}
@@ -215,10 +252,10 @@ dialog::backdrop{background:rgba(10,30,50,.45)}
 .acc-head .av{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.16);display:grid;place-items:center;flex:none}
 .acc-head .av svg{width:13px;height:13px;stroke:#fff;fill:none;stroke-width:1.9}
 .acc-head > div{min-width:0}
-.acc-head > div > b{display:block;font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
-.acc-head span{display:block;font-size:9.5px;opacity:.85;line-height:1.3;margin-top:1px;min-height:25px}
+.acc-head > div > b{display:block;font-size:calc(13px * var(--escala));font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.acc-head span{display:block;font-size:calc(9.5px * var(--escala));opacity:.85;line-height:1.3;margin-top:1px;min-height:25px}
 .acc-head span b{display:inline;font-size:inherit;text-transform:none;font-weight:800}
-.acc table{width:100%;border-collapse:collapse;font-size:10.5px;table-layout:fixed}
+.acc table{width:100%;border-collapse:collapse;font-size:calc(10.5px * var(--escala));table-layout:fixed}
 .acc thead th{
   color:#fff;font-size:.81em;font-weight:800;letter-spacing:.03em;padding:5px 5px;text-align:left;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
@@ -243,16 +280,16 @@ dialog::backdrop{background:rgba(10,30,50,.45)}
 .cons .ic{width:64px;height:64px;border-radius:50%;background:var(--navy);display:grid;place-items:center;flex:none}
 .cons .ic svg{width:32px;height:32px;stroke:#fff;fill:none;stroke-width:1.6}
 .cons .tx{flex:1;text-align:center}
-.cons .tx span{display:block;font-size:12.5px;color:#33465A}
-.cons .tx b{display:block;font-size:33px;font-weight:800;color:var(--green);letter-spacing:-.02em;margin-top:2px}
+.cons .tx span{display:block;font-size:calc(12.5px * var(--escala));color:#33465A}
+.cons .tx b{display:block;font-size:calc(33px * var(--escala));font-weight:800;color:var(--green);letter-spacing:-.02em;margin-top:2px}
 
 /* 5 leitura */
 .read{display:flex;gap:14px;padding:14px}
 .read .ic{width:52px;height:52px;border-radius:50%;background:var(--navy);display:grid;place-items:center;flex:none}
 .read .ic svg{width:26px;height:26px;stroke:#fff;fill:none;stroke-width:1.6}
-.read p{margin:0;font-size:12px;line-height:1.6;color:#2B3E51}
-.read p b{color:var(--navy)}
-.read-foot{border-top:1px solid #EDF0F3;padding:9px 14px;display:flex;align-items:center;gap:8px;font-size:11px;color:#4A5C6E}
+.read p{margin:0;font-size:calc(12px * var(--escala));line-height:1.6;color:#2B3E51}
+.read p b{color:var(--navy-txt)}
+.read-foot{border-top:1px solid #EDF0F3;padding:9px 14px;display:flex;align-items:center;gap:8px;font-size:calc(11px * var(--escala));color:#4A5C6E}
 .read-foot svg{width:15px;height:15px;flex:none}
 
 .nodata{padding:34px;text-align:center;color:var(--muted);background:#fff;border-radius:var(--radius);border:1px dashed #C9D3DC}
@@ -264,16 +301,16 @@ dialog::backdrop{background:rgba(10,30,50,.45)}
 .filtros{margin-bottom:12px}
 .filtros-top{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
 .filtros-top .btn{margin-bottom:1px}
-#filtroCount{background:var(--gold);color:var(--navy);margin-left:2px}
+#filtroCount{background:var(--gold);color:var(--navy-txt);margin-left:2px}
 #btnMaisFiltros.aberto svg{transform:rotate(180deg)}
 
 /* linha de filtros aplicados dentro do relatório */
 .r-filters{
   border-top:1px solid #EDF0F3;padding:8px 14px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;
-  font-size:10.5px;color:var(--muted);
+  font-size:calc(10.5px * var(--escala));color:var(--muted);
 }
 .r-filters b{
-  background:#EEF2F6;color:var(--navy);border-radius:999px;padding:3px 9px;font-size:10.5px;font-weight:700;
+  background:#EEF2F6;color:var(--navy-txt);border-radius:999px;padding:3px 9px;font-size:calc(10.5px * var(--escala));font-weight:700;
 }
 
 /* consolidado por responsável */
@@ -281,18 +318,18 @@ dialog::backdrop{background:rgba(10,30,50,.45)}
 .resp-row:last-child{border-bottom:0}
 .resp-av{
   width:32px;height:32px;border-radius:50%;flex:none;display:grid;place-items:center;
-  color:#fff;font-size:11.5px;font-weight:800;letter-spacing:.02em;
+  color:#fff;font-size:calc(11.5px * var(--escala));font-weight:800;letter-spacing:.02em;
 }
 .resp-mid{flex:1;min-width:0}
-.resp-mid b{display:block;font-size:13px;font-weight:800;color:var(--navy)}
-.resp-mid span{display:block;font-size:10px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.resp-mid b{display:block;font-size:calc(13px * var(--escala));font-weight:800;color:var(--navy-txt)}
+.resp-mid span{display:block;font-size:calc(10px * var(--escala));color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .resp-bar{height:5px;border-radius:3px;background:#E9EDF1;margin-top:6px;overflow:hidden}
 .resp-bar i{display:block;height:100%;border-radius:3px}
 .resp-val{text-align:right;flex:none}
-.resp-val b{display:block;font-size:14.5px;font-weight:800;color:var(--green-dark);font-variant-numeric:tabular-nums}
-.resp-val em{display:block;font-style:normal;font-size:10px;color:var(--muted);margin-top:1px}
-.resp-foot{padding:9px 14px;background:#F7F9FB;display:flex;justify-content:space-between;align-items:center;font-size:11.5px}
-.resp-foot b{font-size:14px;color:var(--green-dark);font-variant-numeric:tabular-nums}
+.resp-val b{display:block;font-size:calc(14.5px * var(--escala));font-weight:800;color:var(--green-dark);font-variant-numeric:tabular-nums}
+.resp-val em{display:block;font-style:normal;font-size:calc(10px * var(--escala));color:var(--muted);margin-top:1px}
+.resp-foot{padding:9px 14px;background:var(--sutil);display:flex;justify-content:space-between;align-items:center;font-size:calc(11.5px * var(--escala))}
+.resp-foot b{font-size:calc(14px * var(--escala));color:var(--green-dark);font-variant-numeric:tabular-nums}
 @media print{
   @page{margin:8mm}
   body{background:#fff;padding:0}
@@ -307,79 +344,192 @@ dialog::backdrop{background:rgba(10,30,50,.45)}
 <style>
 /* ===== acréscimos da demonstração (mesma linguagem visual do app) ===== */
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:10px;margin-bottom:12px}
-.kpi{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:13px 14px;box-shadow:var(--shadow)}
-.kpi span{font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);display:block}
-.kpi b{display:block;font-size:21px;font-weight:800;color:var(--navy);margin-top:6px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:13px 14px;box-shadow:var(--shadow)}
+.kpi span{font-size:calc(10px * var(--escala));font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);display:block}
+.kpi b{display:block;font-size:calc(21px * var(--escala));font-weight:800;color:var(--navy-txt);margin-top:6px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 .kpi b.g{color:var(--green-dark)}
 .kpi b.r{color:#B4232A}
-.kpi em{display:block;font-style:normal;font-size:11px;color:var(--muted);margin-top:4px}
+.kpi em{display:block;font-style:normal;font-size:calc(11px * var(--escala));color:var(--muted);margin-top:4px}
 
-.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:800;white-space:nowrap}
-.badge.ok{background:#E4F4EA;color:#0F7A38}
-.badge.wait{background:#FBF0D6;color:#8A6200}
-.badge.open{background:#E8EEF5;color:#2B4E72}
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:calc(11px * var(--escala));font-weight:800;white-space:nowrap}
+.badge.ok{background:rgba(22,163,74,.14);color:var(--green-dark)}
+.badge.wait{background:rgba(224,168,46,.18);color:#9A6E00}
+.badge.open{background:var(--sutil);color:var(--navy-txt)}
 
 .subnav{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px}
 .subnav button{
-  flex:none;background:#fff;border:1px solid var(--line);border-radius:999px;
-  padding:8px 15px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;
+  flex:none;background:var(--card);border:1px solid var(--line);border-radius:999px;
+  padding:8px 15px;font-size:calc(13px * var(--escala));font-weight:700;color:var(--muted);cursor:pointer;
 }
-.subnav button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.subnav button.on{background:var(--navy);border-color:var(--navy-txt);color:#fff}
 .sub{display:none}
 .sub.on{display:block}
 
 .params{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
 .params span{
-  background:#EEF3F8;color:var(--navy);border:1px solid #DCE5EE;border-radius:999px;
-  padding:5px 11px;font-size:11.5px;font-weight:700;
+  background:var(--sutil);color:var(--navy-txt);border:1px solid var(--line);border-radius:999px;
+  padding:5px 11px;font-size:calc(11.5px * var(--escala));font-weight:700;
 }
-.params span.gold{background:#FBF0D6;border-color:#F0DEAE;color:#8A6200}
+.params span.gold{background:rgba(224,168,46,.18);border-color:rgba(224,168,46,.4);color:#9A6E00}
 
 .totbar{
   display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center;
-  background:#F4F7FA;border:1px solid var(--line);border-radius:var(--radius);padding:13px 15px;margin-top:12px;
+  background:var(--sutil);border:1px solid var(--line);border-radius:var(--radius);padding:13px 15px;margin-top:12px;
 }
-.totbar > div span{display:block;font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.totbar > div b{display:block;font-size:15px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums;margin-top:2px}
+.totbar > div span{display:block;font-size:calc(9.5px * var(--escala));font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.totbar > div b{display:block;font-size:calc(15px * var(--escala));font-weight:800;color:var(--navy-txt);font-variant-numeric:tabular-nums;margin-top:2px}
 .totbar > div b.g{color:var(--green-dark)}
 .totbar > div b.r{color:#B4232A}
 .totbar .push{flex:1}
 
-.muted{color:var(--muted);font-size:13px}
-.hint{font-size:12.5px;color:var(--muted);margin:0 0 12px}
-.tabbar button{font-size:10px}
+.muted{color:var(--muted);font-size:calc(13px * var(--escala))}
+.hint{font-size:calc(12.5px * var(--escala));color:var(--muted);margin:0 0 12px}
+.tabbar button{font-size:calc(10px * var(--escala))}
 .tabbar button b{font-weight:600}
 
 .portal{
   background:var(--navy);color:#fff;border-radius:var(--radius);padding:18px;margin-bottom:12px;
   display:flex;flex-wrap:wrap;gap:18px;align-items:center;
 }
-.portal .big span{display:block;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;opacity:.75}
-.portal .big b{display:block;font-size:29px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+.portal .big span{display:block;font-size:calc(10px * var(--escala));font-weight:800;letter-spacing:.07em;text-transform:uppercase;opacity:.75}
+.portal .big b{display:block;font-size:calc(29px * var(--escala));font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
 .portal .sm{text-align:left}
-.portal .sm span{display:block;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;opacity:.75}
-.portal .sm b{display:block;font-size:15px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+.portal .sm span{display:block;font-size:calc(10px * var(--escala));font-weight:800;letter-spacing:.07em;text-transform:uppercase;opacity:.75}
+.portal .sm b{display:block;font-size:calc(15px * var(--escala));font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
 
-.op-ref{font-weight:800;color:var(--navy)}
-.op-sub{display:block;font-size:11px;color:var(--muted);font-weight:600;margin-top:1px}
+.op-ref{font-weight:800;color:var(--navy-txt)}
+.op-sub{display:block;font-size:calc(11px * var(--escala));color:var(--muted);font-weight:600;margin-top:1px}
 .lockbar{
-  background:#FBF0D6;border:1px solid #F0DEAE;color:#7A5700;border-radius:var(--radius);
-  padding:11px 14px;font-size:13px;font-weight:600;margin-bottom:12px;
+  background:rgba(224,168,46,.15);border:1px solid rgba(224,168,46,.4);color:#9A6E00;border-radius:var(--radius);
+  padding:11px 14px;font-size:calc(13px * var(--escala));font-weight:600;margin-bottom:12px;
 }
+
+/* aviso no topo da tela */
+.aviso-topo{
+  display:flex;gap:12px;align-items:flex-start;
+  background:rgba(224,168,46,.15);border-bottom:1px solid rgba(224,168,46,.4);
+  color:#8A6200;padding:12px 16px;font-size:calc(13px * var(--escala));line-height:1.5;
+}
+html[data-tema="escuro"] .aviso-topo{color:#E9C46A}
+.aviso-topo .texto{flex:1}
+.aviso-topo code{font-family:ui-monospace,monospace;background:rgba(0,0,0,.08);padding:1px 5px;border-radius:4px}
+.aviso-topo button{background:none;border:0;color:inherit;font-size:calc(20px * var(--escala));line-height:1;cursor:pointer;padding:0 4px}
+
+/* ---- cabeçalho ---- */
+.brand-logo{width:34px;height:34px;border-radius:8px;flex:none;display:block}
+.topbar .brand{line-height:1.1}
+.topbar .brand b{display:block;font-size:calc(15px * var(--escala));font-weight:800;letter-spacing:.03em}
+.topbar .brand i{display:block;font-style:normal;font-size:calc(10.5px * var(--escala));font-weight:600;
+  letter-spacing:.07em;color:#9BB0C4;margin-top:2px}
+
+/* ---- paletas ---- */
+.paletas{display:flex;flex-wrap:wrap;gap:8px}
+.paleta{
+  width:46px;height:34px;border-radius:9px;border:2px solid var(--line);cursor:pointer;
+  padding:0;overflow:hidden;display:flex;flex-direction:column;
+}
+.paleta.on{border-color:var(--ink);box-shadow:0 0 0 3px rgba(120,150,180,.25)}
+.paleta span{display:block;flex:1}
+input[type=range]{width:100%;accent-color:var(--navy-txt)}
+
+/* aviso no topo da tela */
+.aviso-topo{
+  display:flex;gap:12px;align-items:flex-start;
+  background:rgba(224,168,46,.15);border-bottom:1px solid rgba(224,168,46,.4);
+  color:#8A6200;padding:12px 16px;font-size:calc(13px * var(--escala));line-height:1.5;
+}
+html[data-tema="escuro"] .aviso-topo{color:#E9C46A}
+.aviso-topo .texto{flex:1}
+.aviso-topo code{font-family:ui-monospace,monospace;background:rgba(0,0,0,.08);padding:1px 5px;border-radius:4px}
+.aviso-topo button{background:none;border:0;color:inherit;font-size:calc(20px * var(--escala));line-height:1;cursor:pointer;padding:0 4px}
+
+/* ---- cabeçalho ---- */
+.brand-logo{width:34px;height:34px;border-radius:8px;flex:none}
+.topbar .brand{display:flex;flex-direction:column;line-height:1.1}
+.topbar .brand b{font-size:calc(15px * var(--escala));font-weight:900;letter-spacing:.03em}
+.topbar .brand i{font-style:normal;font-size:calc(10.5px * var(--escala));font-weight:600;
+  letter-spacing:.08em;color:rgba(255,255,255,.6);margin-top:2px}
+
+/* ---- aparência ---- */
+.paletas{display:flex;flex-wrap:wrap;gap:9px}
+.paleta{
+  width:44px;height:44px;border-radius:10px;border:2px solid transparent;cursor:pointer;
+  padding:0;position:relative;overflow:hidden;
+}
+.paleta.on{border-color:var(--ink);box-shadow:0 0 0 2px var(--card) inset}
+.paleta span{position:absolute;inset:0}
+.paleta span:last-child{left:60%}
+input[type=range]{width:100%;accent-color:var(--navy-txt)}
+
+/* botão de acrescentar item numa lista */
+.mini-add{
+  background:none;border:0;color:var(--navy-txt);font-weight:800;cursor:pointer;
+  font-size:calc(11.5px * var(--escala));padding:0 0 0 6px;text-decoration:underline;
+}
+.mini-add:hover{color:var(--navy-2)}
+
+/* detalhes por item quando há mais de um selecionado */
+.detalhes{margin-top:10px;display:grid;gap:8px}
+.detalhe-linha{
+  display:grid;grid-template-columns:minmax(110px,auto) 1fr auto;gap:8px;align-items:center;
+  background:var(--sutil);border:1px solid var(--line);border-radius:8px;padding:8px 10px;
+}
+.detalhe-linha b{font-size:calc(12.5px * var(--escala));color:var(--navy-txt)}
+.detalhe-linha input{background:var(--campo)}
+@media (max-width:560px){ .detalhe-linha{grid-template-columns:1fr} }
+
+/* lista de parceiros em acordeão */
+.acordeao{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.acordeao + .acordeao{margin-top:8px}
+.acordeao > button{
+  width:100%;background:var(--card);border:0;cursor:pointer;text-align:left;
+  padding:12px 14px;display:flex;align-items:center;gap:10px;color:var(--ink);
+}
+.acordeao > button:hover{background:var(--sutil)}
+.acordeao > button .nome{flex:1;font-weight:700;font-size:calc(14px * var(--escala))}
+.acordeao > button .seta{transition:transform .15s;color:var(--muted);flex:none}
+.acordeao.aberto > button .seta{transform:rotate(90deg)}
+.acordeao .corpo{padding:0 14px 14px;border-top:1px solid var(--line)}
+.acordeao:not(.aberto) .corpo{display:none}
 
 /* ---- tela de acesso do parceiro ---- */
 .loginwrap{position:fixed;inset:0;z-index:100;background:var(--navy);display:grid;place-items:center;padding:20px}
-.loginbox{background:#fff;border-radius:14px;padding:28px;width:min(380px,100%);box-shadow:0 20px 60px rgba(0,0,0,.35)}
-.loginlogo{font-weight:900;font-size:17px;letter-spacing:.02em;color:var(--navy);margin-bottom:16px}
+.loginbox{background:var(--card);border-radius:14px;padding:28px;width:min(380px,100%);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.loginlogo{font-weight:900;font-size:calc(17px * var(--escala));letter-spacing:.02em;color:var(--navy-txt);margin-bottom:16px}
 .loginlogo span{color:var(--gold)}
-.loginbox h2{font-size:19px;color:var(--navy)}
-.loginbox p{font-size:13.5px;color:var(--muted);margin:6px 0 16px}
-.loginbox input{text-align:center;font-size:20px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;padding:13px}
-.loginbox .erro{color:#B4232A;font-weight:600;margin:12px 0 0;text-align:center;font-size:13px}
-.btn.google{width:100%;justify-content:center;background:#fff;color:#3C4043;border:1px solid var(--line);font-weight:600}
-.btn.google:hover{background:#F6F8FA}
-.rodape-login{font-size:12px;color:var(--muted);text-align:center;margin:14px 0 0}
-.nuvem{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600}
+.loginbox h2{font-size:calc(19px * var(--escala));color:var(--navy-txt)}
+.loginbox p{font-size:calc(13.5px * var(--escala));color:var(--muted);margin:6px 0 16px}
+.loginbox input{text-align:center;font-size:calc(20px * var(--escala));font-weight:800;letter-spacing:.22em;text-transform:uppercase;padding:13px}
+.loginbox .erro{color:#B4232A;font-weight:600;margin:12px 0 0;text-align:center;font-size:calc(13px * var(--escala))}
+.btn.google{width:100%;justify-content:center;background:var(--card);color:var(--ink);border:1px solid var(--line);font-weight:600}
+.btn.google:hover{background:var(--sutil)}
+.rodape-login{font-size:calc(12px * var(--escala));color:var(--muted);text-align:center;margin:14px 0 0}
+.loginbox .aguardando{color:var(--muted);font-weight:600;margin:12px 0 0;text-align:center;font-size:calc(13px * var(--escala))}
+.diag-acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.diag{margin-top:16px;border-top:1px solid var(--line);padding-top:14px;text-align:left}
+.diag p{font-size:calc(12.5px * var(--escala));color:var(--ink);margin:0 0 9px;text-align:left}
+.diag .mini{font-size:calc(11.5px * var(--escala));color:var(--muted);margin:6px 0 0}
+.diag .uid{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.diag code{
+  flex:1;min-width:0;overflow-x:auto;white-space:nowrap;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:calc(12px * var(--escala));font-weight:700;
+  background:var(--sutil);border:1px dashed var(--line);border-radius:8px;padding:8px 10px;color:var(--navy-txt);
+}
+.loginbox .aguardando{color:var(--muted);font-weight:600;margin:12px 0 0;text-align:center;font-size:calc(13px * var(--escala))}
+.diag-acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.diag{margin-top:16px;border-top:1px solid var(--line);padding-top:14px;text-align:left}
+.diag h4{font-size:calc(13px * var(--escala));color:var(--navy-txt);margin:0 0 6px}
+.diag p{font-size:calc(12.5px * var(--escala));color:var(--muted);margin:0 0 10px;text-align:left}
+.diag ol{margin:0 0 12px;padding-left:18px;font-size:calc(12.5px * var(--escala));color:var(--muted);line-height:1.6}
+.diag code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:calc(11.5px * var(--escala));background:var(--sutil);padding:2px 5px;border-radius:5px;color:var(--navy-txt);word-break:break-all}
+.diag .uid{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.diag .uid code{flex:1}
+.tag-modo{
+  font-size:calc(10.5px * var(--escala));font-weight:800;letter-spacing:.04em;
+  background:rgba(242,194,48,.18);color:var(--gold);
+  border:1px solid rgba(242,194,48,.35);padding:5px 10px;border-radius:999px;
+}
+.nuvem{display:flex;align-items:center;gap:9px;font-size:calc(13.5px * var(--escala));font-weight:600}
 .nuvem i{width:9px;height:9px;border-radius:50%;flex:none;display:block}
 .nuvem i.on{background:var(--green)} .nuvem i.off{background:#C9A227}
 
@@ -395,13 +545,13 @@ body.parceiro .subnav{display:none}
 
 /* ---- acesso dos parceiros (ajustes) ---- */
 .codigo{
-  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:15px;font-weight:800;
-  letter-spacing:.16em;color:var(--navy);background:#EEF3F8;border:1px dashed #C3D2E0;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:calc(15px * var(--escala));font-weight:800;
+  letter-spacing:.16em;color:var(--navy-txt);background:var(--sutil);border:1px dashed var(--line);
   border-radius:8px;padding:6px 11px;display:inline-block;
 }
 .acoes{display:flex;gap:6px;align-items:center;justify-content:flex-end}
 .acao-min{
-  height:32px;padding:0 12px;font-size:12.5px;line-height:1;
+  height:32px;padding:0 12px;font-size:calc(12.5px * var(--escala));line-height:1;
   display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
 }
 .acao-min svg{width:14px;height:14px;flex:none}
@@ -411,25 +561,29 @@ body.parceiro .subnav{display:none}
 .acc tbody td,.acc thead th{padding-left:4px;padding-right:4px}
 
 /* seção de operações dentro do relatório */
-.opsec table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed}
+.opsec table{width:100%;border-collapse:collapse;font-size:calc(11px * var(--escala));table-layout:fixed}
 .opsec thead th{
-  background:#F4F7FA;color:var(--muted);font-size:9px;font-weight:800;letter-spacing:.05em;
+  background:var(--sutil);color:var(--muted);font-size:calc(9px * var(--escala));font-weight:800;letter-spacing:.05em;
   text-transform:uppercase;padding:7px 8px;text-align:left;border-bottom:1px solid var(--line);
 }
 .opsec td{padding:8px;border-bottom:1px solid #EFF2F5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .opsec tr:last-child td{border-bottom:0}
 .opsec .n{text-align:right;font-variant-numeric:tabular-nums}
-.opsec tfoot td{background:#F7F9FB;font-weight:800;border-top:1px solid var(--line);border-bottom:0}
+.opsec tfoot td{background:var(--sutil);font-weight:800;border-top:1px solid var(--line);border-bottom:0}
 </style>
 
 </head>
 <body>
 <div class="topbar">
-  <div class="brand">MILHAS <span>PLUS</span></div>
+  <img src="logo.png" alt="" class="brand-logo">
+  <div class="brand">
+    <b>MILHAS PLUS</b>
+    <i>controle de liminares</i>
+  </div>
   <div class="spacer"></div>
   <span id="tagParceiro" hidden style="font-size:12px;font-weight:700;margin-right:8px"></span>
   <button class="ghost" id="btnSair" hidden>Sair</button>
-  <span class="no-admin" style="font-size:11px;font-weight:700;background:rgba(242,194,48,.18);color:var(--gold);border:1px solid rgba(242,194,48,.35);padding:5px 10px;border-radius:999px">DEMONSTRAÇÃO</span>
+  <span id="tagModo" class="no-admin tag-modo" hidden></span>
 </div>
 
 <div class="loginwrap" id="loginParceiro" hidden>
@@ -453,7 +607,13 @@ body.parceiro .subnav{display:none}
     </div>
 
     <p id="avisoLogin" class="erro" hidden></p>
+    <div id="diag" class="diag" hidden></div>
   </div>
+</div>
+
+<div class="aviso-topo" id="avisoTopo" hidden>
+  <div class="texto" id="avisoTopoTxt"></div>
+  <button type="button" id="avisoTopoX" aria-label="Fechar">&times;</button>
 </div>
 
 <div class="wrap">
@@ -511,16 +671,31 @@ body.parceiro .subnav{display:none}
       <div class="grid2">
         <div class="field"><label for="opData">Data</label><input type="date" id="opData"></div>
         <div class="field"><label for="opRef">Referência da promoção</label><input type="text" id="opRef" placeholder="LIVELO SMILES – 80%"></div>
-        <div class="field"><label for="opCia">CIA / programa</label><select id="opCia"></select></div>
-        <div class="field"><label for="opTipo">Tipo</label><select id="opTipo"><option>Compra de milhas</option><option>Clube</option><option>Transferência bonificada</option><option>Cartão</option></select></div>
-        <div class="field"><label for="opFonte">Fornecedor dos pontos</label><select id="opFonte"></select></div>
-        <div class="field"><label for="opInvestidor">Investidor</label><select id="opInvestidor"><option>MILHAS PLUS</option><option>TITULAR</option></select></div>
+        <div class="field">
+          <label for="opCia">CIA / programa <button type="button" class="mini-add" data-novo="cia">+ nova</button></label>
+          <select id="opCia"></select>
+        </div>
+        <div class="field">
+          <label for="opFonte">Fornecedor dos pontos <button type="button" class="mini-add" data-novo="fonte">+ novo</button></label>
+          <select id="opFonte"></select>
+        </div>
         <div class="field"><label for="opCpmVenda">CPM venda (R$/milheiro)</label><input type="number" id="opCpmVenda" step="0.01" value="16.00"></div>
         <div class="field"><label for="opModo">Informar custo por</label><select id="opModo"><option value="total">Custo total da operação</option><option value="cpm">CPM de custo</option><option value="sem">Sem custo</option></select></div>
         <div class="field" id="wrapCustoTotal"><label for="opCustoTotal">Custo total (R$)</label><input type="number" id="opCustoTotal" step="0.01" placeholder="21000,00"></div>
         <div class="field" id="wrapCpmCusto" hidden><label for="opCpmCusto">CPM custo (R$/milheiro)</label><input type="number" id="opCpmCusto" step="0.01" placeholder="15,62"></div>
       </div>
-      <p class="hint" style="margin:12px 0 0">No modo <b>custo total</b>, o CPM de custo é calculado no lançamento, com rateio proporcional às milhas de cada conta.</p>
+      <div class="field" style="margin-top:14px">
+        <label>Tipo da operação <button type="button" class="mini-add" data-novo="tipo">+ novo</button></label>
+        <div class="checkrow" id="opTipos"></div>
+        <div id="opTiposDet"></div>
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label>Investidor <button type="button" class="mini-add" data-novo="investidor">+ novo</button></label>
+        <div class="checkrow" id="opInvestidores"></div>
+        <div id="opInvestidoresDet"></div>
+      </div>
+      <p class="hint" style="margin:12px 0 0">Marque quantos tipos e investidores quiser. Com dois ou mais, aparece um campo para detalhar cada um.</p>
+      <p class="hint" style="margin:6px 0 0">No modo <b>custo total</b>, o CPM de custo é calculado no lançamento, com rateio proporcional às milhas de cada conta.</p>
       <div style="margin-top:12px"><button class="btn" id="btnSalvarOp">Cadastrar operação</button></div>
     </div>
 
@@ -658,13 +833,32 @@ body.parceiro .subnav{display:none}
       </div>
       <div class="box">
         <h3>Cabeçalho do relatório</h3>
+        <p class="hint">O nome ao lado do título é sempre o do parceiro filtrado no painel.</p>
         <div class="grid2">
           <div class="field"><label for="cfgTitulo">Título</label><input type="text" id="cfgTitulo"></div>
-          <div class="field"><label for="cfgDestaque">Nome ao lado do título</label><select id="cfgDestaque"></select></div>
           <div class="field"><label for="cfgTopN">Linhas antes de agrupar em “Outros”</label>
             <select id="cfgTopN"><option>2</option><option selected>3</option><option>4</option><option>5</option></select></div>
         </div>
       </div>
+      <div class="box">
+        <h3>Aparência</h3>
+        <div class="grid2">
+          <div class="field">
+            <label for="cfgTema">Tema</label>
+            <select id="cfgTema"><option value="claro">Claro</option><option value="escuro">Escuro</option></select>
+          </div>
+          <div class="field">
+            <label for="cfgEscala">Tamanho das letras: <span id="escalaTxt">100%</span></label>
+            <input type="range" id="cfgEscala" min="80" max="150" step="5" value="100">
+          </div>
+        </div>
+        <div class="field" style="margin-top:14px">
+          <label>Paleta de cores</label>
+          <div class="paletas" id="paletas"></div>
+        </div>
+        <p class="hint" style="margin:12px 0 0">O relatório continua claro em qualquer tema, porque é o que vai para o PDF e para a imagem enviada ao cliente.</p>
+      </div>
+
       <div class="box">
         <h3>Armazenamento</h3>
         <div id="statusNuvem"></div>
@@ -697,14 +891,16 @@ body.parceiro .subnav{display:none}
       <div class="field"><label for="edData">Data</label><input type="date" id="edData"></div>
       <div class="field"><label for="edRef">Referência da promoção</label><input type="text" id="edRef"></div>
       <div class="field"><label for="edCia">CIA / programa</label><select id="edCia"></select></div>
-      <div class="field"><label for="edTipo">Tipo</label><select id="edTipo"><option>Compra de milhas</option><option>Clube</option><option>Transferência bonificada</option><option>Cartão</option></select></div>
       <div class="field"><label for="edFonte">Fornecedor dos pontos</label><select id="edFonte"></select></div>
-      <div class="field"><label for="edInvestidor">Investidor</label><select id="edInvestidor"><option>MILHAS PLUS</option><option>TITULAR</option></select></div>
       <div class="field"><label for="edCpmVenda">CPM venda (R$/milheiro)</label><input type="number" id="edCpmVenda" step="0.01"></div>
       <div class="field"><label for="edModo">Informar custo por</label><select id="edModo"><option value="total">Custo total da operação</option><option value="cpm">CPM de custo</option><option value="sem">Sem custo</option></select></div>
       <div class="field" id="edWrapTotal"><label for="edCustoTotal">Custo total (R$)</label><input type="number" id="edCustoTotal" step="0.01"></div>
       <div class="field" id="edWrapCpm" hidden><label for="edCpmCusto">CPM custo (R$/milheiro)</label><input type="number" id="edCpmCusto" step="0.01"></div>
     </div>
+    <div class="field"><label>Tipo da operação</label>
+      <div class="checkrow" id="edTipos"></div><div id="edTiposDet"></div></div>
+    <div class="field"><label>Investidor</label>
+      <div class="checkrow" id="edInvestidores"></div><div id="edInvestidoresDet"></div></div>
     <p class="hint" id="edAviso" style="margin:0"></p>
   </div>
   <div class="dlg-foot">
@@ -783,6 +979,8 @@ function seed(){
 
   const cias   = [{nome:'SMILES',cor:'#F0821E'},{nome:'AZUL',cor:'#0B4EA2'},{nome:'LATAM',cor:'#E8114B'}];
   const fontes = ['LIVELO','INTER','C6','ESFERA','TITULAR','GENIAL'];
+  const tiposOp = ['Compra de milhas','Clube','Transferência bonificada','Cartão'];
+  const investidoresOp = ['MILHAS PLUS','TITULAR','PARCEIRO'];
 
   const O = [
     {id:'o1',ref:'LIVELO SMILES – 80%',   data:'2026-08-05',cia:'SMILES',tipo:'Compra de milhas',fonte:'LIVELO',investidor:'MILHAS PLUS',cpmVenda:16,modo:'cpm',  cpmCusto:15.62,custoTotal:null,status:'lancada'},
@@ -815,7 +1013,7 @@ function seed(){
   lanc('o5',[['c8',651200],['c9',675000]]);
 
   return {
-    responsaveis:R, contas:C, cias, fontes, operacoes:O, lancamentos:L,
+    responsaveis:R, contas:C, cias, fontes, tiposOp, investidoresOp, operacoes:O, lancamentos:L,
     pagamentos:[{id:uid(),respId:'r4',mes:'2026-08',valor:12000,data:'2026-08-07',por:'Financeiro · Luis',comprovante:'comprovante-070826.pdf'}],
     fechados:[], ocultas:[],
     cfg:{titulo:'Fechamento Mensal',destaque:'auto',topN:3},
@@ -823,9 +1021,23 @@ function seed(){
   };
 }
 
+function nomesDe(lista){ return (lista||[]).map(x=>x.nome).join(' + ') || '—'; }
+
 function migrar(){
   ['responsaveis','contas','cias','fontes','operacoes','lancamentos','pagamentos','fechados','ocultas'].forEach(k=>{ if(!Array.isArray(S[k])) S[k]=[]; });
-  if(!S.cfg) S.cfg = {titulo:'Fechamento Mensal',destaque:'auto',topN:3};
+  if(!Array.isArray(S.tiposOp) || !S.tiposOp.length) S.tiposOp = ['Compra de milhas','Clube','Transferência bonificada','Cartão'];
+  if(!Array.isArray(S.investidoresOp) || !S.investidoresOp.length) S.investidoresOp = ['MILHAS PLUS','TITULAR','PARCEIRO'];
+  // operações antigas guardavam um único tipo/investidor em texto
+  S.operacoes.forEach(o=>{
+    if(!Array.isArray(o.tipos))        o.tipos        = o.tipo       ? [{nome:o.tipo,      detalhe:''}] : [];
+    if(!Array.isArray(o.investidores)) o.investidores = o.investidor ? [{nome:o.investidor,detalhe:'',valor:null}] : [];
+    o.tipo = nomesDe(o.tipos);
+    o.investidor = nomesDe(o.investidores);
+    o.tipos.forEach(t=>{ if(!S.tiposOp.includes(t.nome)) S.tiposOp.push(t.nome); });
+    o.investidores.forEach(i=>{ if(!S.investidoresOp.includes(i.nome)) S.investidoresOp.push(i.nome); });
+  });
+  if(!S.cfg) S.cfg = {titulo:'Fechamento Mensal',topN:3};
+  if(!S.cfg.aparencia) S.cfg.aparencia = {tema:'claro', escala:100, paleta:'1'};
   if(!S.filtro) S.filtro = {resp:'todos',cia:'todas',fonte:'todas',min:'',max:''};
   S.responsaveis.forEach(r=>{ if(r.tel===undefined) r.tel=''; if(r.codigo===undefined) r.codigo=''; if(r.email===undefined) r.email=''; });
   S.lancamentos.forEach(l=>{ if(l.resultado===undefined) l.resultado = +l.valor||0; if(l.milhas===undefined) l.milhas=0; if(l.custo===undefined) l.custo=0; });
@@ -870,7 +1082,21 @@ function gerarCodigo(){
   return S.responsaveis.some(r=>r.codigo===c) ? gerarCodigo() : c;
 }
 const porCodigo = c => S.responsaveis.find(r=>r.codigo && r.codigo.toUpperCase()===String(c||'').trim().toUpperCase());
-const linkDoParceiro = r => location.origin + location.pathname + '#p=' + r.codigo;
+const baseDoApp = () => location.origin + location.pathname;
+const linkDoParceiro = r => baseDoApp() + '#p=' + r.codigo;
+
+/* O link é montado a partir do endereço onde o app está aberto agora.
+   Se o app estiver sendo aberto de um arquivo local, de um preview do
+   Drive ou do localhost, o link não serve para mandar a ninguém. */
+function enderecoPublicavel(){
+  const proto = location.protocol, host = location.hostname;
+  if(proto === 'file:') return {ok:false, motivo:'o app está aberto como arquivo no seu computador'};
+  if(!/^https?:$/.test(proto)) return {ok:false, motivo:'o endereço não é um site publicado'};
+  if(/^(localhost|127\.|0\.0\.0\.0|192\.168\.|10\.)/.test(host)) return {ok:false, motivo:'o app está rodando só na sua máquina'};
+  if(/(^|\.)(google|googleusercontent|gstatic)\.com$/.test(host))
+    return {ok:false, motivo:'o app está sendo aberto por um visualizador do Google (Drive, Docs), e não pelo endereço publicado'};
+  return {ok:true};
+}
 
 function entrarComoParceiro(rid){
   parceiroLogado = rid;
@@ -914,6 +1140,10 @@ function checarAcesso(){
   if(s && respById(s)){ entrarComoParceiro(s); return true; }
   return false;
 }
+document.addEventListener('click', e=>{
+  if(e.target.closest('#avisoTopoX')) el('avisoTopo').hidden = true;
+});
+
 el('btnEntrar').onclick = ()=>{
   const r = porCodigo(el('codigoInput').value);
   if(r){ el('codigoErro').hidden=true; entrarComoParceiro(r.id); }
@@ -1040,13 +1270,12 @@ function donut(pct,color){
       stroke-dasharray="${on.toFixed(2)} ${(c-on).toFixed(2)}"/></svg>
     <em>${pct.toFixed(1).replace('.',',')}%</em></div>`;
 }
-/* nome ao lado do título: o parceiro selecionado no painel.
-   Sem seleção, entra o parceiro de maior resultado no mês. */
-function nomeDestaque(d){
+/* o nome ao lado do título é sempre o do parceiro filtrado;
+   sem filtro, o relatório é consolidado e não leva nome */
+function nomeDestaque(){
   if(parceiroLogado) return respNome(parceiroLogado);
   if(S.filtro.resp && S.filtro.resp!=='todos') return respNome(S.filtro.resp);
-  if(S.cfg.destaque && S.cfg.destaque!=='auto'){ const r=respById(S.cfg.destaque); if(r) return r.nome; }
-  return d.responsaveis[0] ? d.responsaveis[0].nome : '';
+  return '';
 }
 
 function ajustarExtratos(){
@@ -1094,7 +1323,7 @@ function renderReport(){
       </svg></div>
       <div class="logo-txt"><b>MILHAS</b><i>PLUS</i></div>
       <div class="r-title">
-        <h2>${esc(S.cfg.titulo||'Fechamento Mensal')}${nomeDestaque(d)?' – '+esc(nomeDestaque(d)):''}</h2>
+        <h2>${esc(S.cfg.titulo||'Fechamento Mensal')}${nomeDestaque()?' – '+esc(nomeDestaque()):''}</h2>
         <p>${icoUser} Contas analisadas: <b>${lista}</b></p>
       </div>
       <div class="datepill"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>${esc(mesLabel(mk_))}</div>
@@ -1278,6 +1507,81 @@ function renderOps(){
   });
 }
 
+/* =========================================================
+   Multi-seleção com detalhe por item
+   Usada para "tipo" e "investidor", no cadastro e na edição.
+   ========================================================= */
+const selOp = { tipos:[], investidores:[] };
+const selEd = { tipos:[], investidores:[] };
+
+function multiConfig(campo){
+  return campo==='tipos'
+    ? {catalogo:()=>S.tiposOp,        rotulo:'tipo',      valor:false}
+    : {catalogo:()=>S.investidoresOp, rotulo:'investidor', valor:true};
+}
+
+function renderMulti(prefixo, campo, estado){
+  const cfg = multiConfig(campo);
+  const idBase = prefixo + (campo==='tipos' ? 'Tipos' : 'Investidores');
+  const box = el(idBase), det = el(idBase + 'Det');
+  if(!box) return;
+
+  const marcados = new Set(estado[campo].map(x=>x.nome));
+  box.innerHTML = cfg.catalogo().map(n=>
+    `<label><input type="checkbox" value="${esc(n)}" ${marcados.has(n)?'checked':''}>${esc(n)}</label>`).join('');
+
+  box.querySelectorAll('input').forEach(i=>i.onchange=()=>{
+    const n = i.value;
+    if(i.checked){
+      if(!estado[campo].some(x=>x.nome===n)) estado[campo].push({nome:n, detalhe:'', valor:null});
+    }else{
+      estado[campo] = estado[campo].filter(x=>x.nome!==n);
+    }
+    renderMulti(prefixo, campo, estado);
+  });
+
+  // com dois ou mais marcados, cada um ganha seu detalhe
+  if(!det) return;
+  if(estado[campo].length < 2){ det.innerHTML=''; return; }
+  det.innerHTML = `<div class="detalhes">${estado[campo].map((x,k)=>`
+    <div class="detalhe-linha">
+      <b>${esc(x.nome)}</b>
+      <input type="text" data-det="${k}" value="${esc(x.detalhe||'')}" placeholder="detalhe deste ${cfg.rotulo}">
+      ${cfg.valor?`<input type="number" step="0.01" data-val="${k}" value="${x.valor??''}" placeholder="R$" style="width:120px">`:''}
+    </div>`).join('')}</div>`;
+
+  det.querySelectorAll('[data-det]').forEach(i=>i.oninput=()=>{ estado[campo][+i.dataset.det].detalhe = i.value; });
+  det.querySelectorAll('[data-val]').forEach(i=>i.oninput=()=>{
+    estado[campo][+i.dataset.val].valor = i.value===''?null:parseFloat(i.value);
+  });
+}
+
+/* botões "+ nova/novo" ao lado dos campos do cadastro de operação */
+document.addEventListener('click', e=>{
+  const b = e.target.closest('.mini-add'); if(!b) return;
+  const tipo = b.dataset.novo;
+  const rotulos = {cia:'companhia / programa', fonte:'fornecedor de pontos', tipo:'tipo de operação', investidor:'investidor'};
+  const nome = (prompt('Nome do novo ' + rotulos[tipo] + ':') || '').trim();
+  if(!nome) return;
+
+  if(tipo==='cia'){
+    if(!S.cias.some(c=>c.nome.toLowerCase()===nome.toLowerCase())) S.cias.push({nome, cor:'#12304C'});
+    save(); preencherSelects(); el('opCia').value = nome;
+  } else if(tipo==='fonte'){
+    if(!S.fontes.includes(nome)) S.fontes.push(nome);
+    save(); preencherSelects(); el('opFonte').value = nome;
+  } else if(tipo==='tipo'){
+    if(!S.tiposOp.includes(nome)) S.tiposOp.push(nome);
+    selOp.tipos.push({nome, detalhe:'', valor:null});
+    save(); renderMulti('op','tipos',selOp);
+  } else {
+    if(!S.investidoresOp.includes(nome)) S.investidoresOp.push(nome);
+    selOp.investidores.push({nome, detalhe:'', valor:null});
+    save(); renderMulti('op','investidores',selOp);
+  }
+  renderCadastros();
+});
+
 el('opModo').onchange = ()=>{
   const m = el('opModo').value;
   el('wrapCustoTotal').hidden = m!=='total';
@@ -1288,13 +1592,17 @@ el('btnSalvarOp').onclick = ()=>{
   if(!ref || !data){ alert('Informe a data e a referência da promoção.'); return; }
   const modo = el('opModo').value;
   S.operacoes.push({
-    id:uid(), ref, data, cia:el('opCia').value, tipo:el('opTipo').value, fonte:el('opFonte').value,
-    investidor:el('opInvestidor').value, cpmVenda:parseFloat(el('opCpmVenda').value)||0, modo,
+    id:uid(), ref, data, cia:el('opCia').value, fonte:el('opFonte').value,
+    tipos: selOp.tipos.map(x=>({...x})), investidores: selOp.investidores.map(x=>({...x})),
+    tipo: nomesDe(selOp.tipos), investidor: nomesDe(selOp.investidores),
+    cpmVenda:parseFloat(el('opCpmVenda').value)||0, modo,
     custoTotal: modo==='total' ? (parseFloat(el('opCustoTotal').value)||0) : null,
     cpmCusto:   modo==='cpm'   ? (parseFloat(el('opCpmCusto').value)||0)   : null,
     status:'aberta'
   });
   el('opRef').value=''; el('opCustoTotal').value=''; el('opCpmCusto').value='';
+  selOp.tipos=[]; selOp.investidores=[];
+  renderMulti('op','tipos',selOp); renderMulti('op','investidores',selOp);
   save(); refreshAll();
   alert('Operação cadastrada. Use "Lançar »" para escolher as contas participantes.');
 };
@@ -1311,7 +1619,10 @@ function abrirEditarOp(id){
   const o = opById(id); if(!o) return;
   opEditando = id;
   el('edData').value=o.data; el('edRef').value=o.ref; el('edCia').value=o.cia;
-  el('edTipo').value=o.tipo; el('edFonte').value=o.fonte; el('edInvestidor').value=o.investidor;
+  el('edFonte').value=o.fonte;
+  selEd.tipos = (o.tipos||[]).map(x=>({...x}));
+  selEd.investidores = (o.investidores||[]).map(x=>({...x}));
+  renderMulti('ed','tipos',selEd); renderMulti('ed','investidores',selEd);
   el('edCpmVenda').value=o.cpmVenda;
   el('edModo').value=o.modo; el('edModo').onchange();
   el('edCustoTotal').value = o.custoTotal ?? '';
@@ -1328,7 +1639,9 @@ el('salvarOpEdit').onclick = ()=>{
   const modo = el('edModo').value;
   Object.assign(o, {
     data: el('edData').value, ref: el('edRef').value.trim(), cia: el('edCia').value,
-    tipo: el('edTipo').value, fonte: el('edFonte').value, investidor: el('edInvestidor').value,
+    fonte: el('edFonte').value,
+    tipos: selEd.tipos.map(x=>({...x})), investidores: selEd.investidores.map(x=>({...x})),
+    tipo: nomesDe(selEd.tipos), investidor: nomesDe(selEd.investidores),
     cpmVenda: parseFloat(el('edCpmVenda').value)||0, modo,
     custoTotal: modo==='total' ? (parseFloat(el('edCustoTotal').value)||0) : null,
     cpmCusto:   modo==='cpm'   ? (parseFloat(el('edCpmCusto').value)||0)   : null
@@ -1638,21 +1951,46 @@ function renderExtrato(){
 /* =========================================================
    Cadastros
    ========================================================= */
+const abertos = new Set();   // parceiros expandidos na lista
+
 function renderCadastros(){
   const optResp = sel => '<option value="">Sem parceiro</option>' +
     S.responsaveis.map(r=>`<option value="${r.id}" ${r.id===sel?'selected':''}>${esc(r.nome)}</option>`).join('');
 
-  el('listaResps').innerHTML = S.responsaveis.length ? `<div style="overflow-x:auto"><table class="list">
-    <thead><tr><th>Parceiro</th><th>E-mail (login)</th><th>Telefone</th><th>PIX</th><th>Dia pgto.</th><th style="text-align:right">Contas</th><th></th></tr></thead>
-    <tbody>${S.responsaveis.map(r=>`<tr>
-      <td style="font-weight:700;white-space:nowrap">${esc(r.nome)}</td>
-      <td><input type="email" data-email="${r.id}" value="${esc(r.email||'')}" placeholder="parceiro@gmail.com" style="min-width:180px"></td>
-      <td><input type="tel" data-tel="${r.id}" value="${esc(r.tel||'')}" placeholder="(44) 99999-9999" style="min-width:150px"></td>
-      <td><input type="text" data-pix="${r.id}" value="${esc(r.pix||'')}" placeholder="chave PIX" style="min-width:140px"></td>
-      <td><input type="number" data-dia="${r.id}" value="${r.dia||5}" min="1" max="28" style="width:70px"></td>
-      <td style="text-align:right">${S.contas.filter(c=>c.respId===r.id).length}</td>
-      <td style="text-align:right"><button class="rowbtn" data-delresp="${r.id}"><svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button></td>
-    </tr>`).join('')}</tbody></table></div>` : '<div class="empty">Nenhum parceiro cadastrado.</div>';
+  // lista em ordem alfabética; cada parceiro abre e fecha ao clicar
+  const ordenados = S.responsaveis.slice().sort((a,b)=>a.nome.localeCompare(b.nome,'pt-BR'));
+  el('listaResps').innerHTML = ordenados.length ? ordenados.map(r=>{
+    const nContas = S.contas.filter(c=>c.respId===r.id).length;
+    return `<div class="acordeao ${abertos.has(r.id)?'aberto':''}" data-acc="${r.id}">
+      <button type="button" data-toggle="${r.id}">
+        <svg class="seta" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+        <span class="nome">${esc(r.nome)}</span>
+        <span class="chip">${nContas} conta${nContas===1?'':'s'}</span>
+        ${r.email?'<span class="badge ok">acesso ativo</span>':''}
+      </button>
+      <div class="corpo">
+        <div class="grid2" style="margin-top:12px">
+          <div class="field"><label>E-mail (login Google)</label>
+            <input type="email" data-email="${r.id}" value="${esc(r.email||'')}" placeholder="parceiro@gmail.com"></div>
+          <div class="field"><label>Telefone (WhatsApp)</label>
+            <input type="tel" data-tel="${r.id}" value="${esc(r.tel||'')}" placeholder="(44) 99999-9999"></div>
+          <div class="field"><label>Chave PIX</label>
+            <input type="text" data-pix="${r.id}" value="${esc(r.pix||'')}" placeholder="CPF, e-mail ou telefone"></div>
+          <div class="field"><label>Dia de pagamento</label>
+            <input type="number" data-dia="${r.id}" value="${r.dia||5}" min="1" max="28"></div>
+        </div>
+        <div class="toolbar" style="margin:12px 0 0">
+          <button class="btn danger acao-min" data-delresp="${r.id}">Excluir parceiro</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty">Nenhum parceiro cadastrado.</div>';
+
+  el('listaResps').querySelectorAll('[data-toggle]').forEach(b=>b.onclick=()=>{
+    const id = b.dataset.toggle;
+    abertos.has(id) ? abertos.delete(id) : abertos.add(id);
+    b.closest('.acordeao').classList.toggle('aberto', abertos.has(id));
+  });
 
   el('listaResps').querySelectorAll('[data-email]').forEach(i=>i.onchange=()=>{ respById(i.dataset.email).email=i.value.trim().toLowerCase(); save(); renderAcessos(); });
   el('listaResps').querySelectorAll('[data-tel]').forEach(i=>i.onchange=()=>{ respById(i.dataset.tel).tel=i.value.trim(); save(); renderAcessos(); });
@@ -1726,12 +2064,74 @@ el('addFonte').onclick = ()=>{
 };
 
 /* =========================================================
+   Aparência: tema, tamanho das letras e paleta
+   ========================================================= */
+const PALETAS = [
+  {id:'1', nome:'Marinho',   cores:['#12304C','#F2C230','#16A34A']},
+  {id:'2', nome:'Oceano',    cores:['#123F5C','#F2A93B','#12A594']},
+  {id:'3', nome:'Floresta',  cores:['#16463A','#E9C46A','#2A9D8F']},
+  {id:'4', nome:'Ametista',  cores:['#3B2F63','#F0B429','#7C5CD6']},
+  {id:'5', nome:'Terra',     cores:['#5A3220','#E8A33D','#B06A2C']},
+  {id:'6', nome:'Grafite',   cores:['#1F2937','#FBBF24','#10B981']},
+  {id:'7', nome:'Vinho',     cores:['#7A1F3D','#F2B705','#C1447E']},
+  {id:'8', nome:'Turquesa',  cores:['#0F4C5C','#F6AE2D','#2EC4B6']},
+  {id:'9', nome:'Ardósia',   cores:['#2B2D42','#EDAE49','#4CA1A3']},
+  {id:'10',nome:'Orquídea',  cores:['#4A2545','#F4A259','#A05C9E']}
+];
+
+function aparencia(){
+  return S.cfg.aparencia || (S.cfg.aparencia = {tema:'claro', escala:100, paleta:'1'});
+}
+/* clareia (t>0) ou escurece (t<0) uma cor hex */
+function tonalizar(hex, t){
+  const n = parseInt(hex.slice(1), 16);
+  const canal = d => {
+    const v = (n >> d) & 255;
+    return Math.max(0, Math.min(255, Math.round(t > 0 ? v + (255 - v) * t : v * (1 + t))));
+  };
+  return '#' + [canal(16), canal(8), canal(0)].map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
+function aplicarAparencia(){
+  const a = aparencia(), r = document.documentElement;
+  r.setAttribute('data-tema', a.tema || 'claro');
+  r.style.setProperty('--escala', (a.escala || 100) / 100);
+
+  const p = PALETAS.find(x => x.id === (a.paleta || '1')) || PALETAS[0];
+  const [navy, gold, green] = p.cores;
+  r.style.setProperty('--navy', navy);
+  r.style.setProperty('--navy-2', tonalizar(navy, 0.18));
+  // no escuro, o texto da marca precisa clarear para continuar legível
+  r.style.setProperty('--navy-txt', (a.tema === 'escuro') ? tonalizar(navy, 0.62) : navy);
+  r.style.setProperty('--gold', gold);
+  r.style.setProperty('--green', green);
+  r.style.setProperty('--green-dark', tonalizar(green, -0.28));
+
+  const meta = document.querySelector('meta[name=theme-color]');
+  if(meta) meta.content = navy;
+  requestAnimationFrame(ajustarEscala);
+}
+function renderAparencia(){
+  const a = aparencia();
+  if(el('cfgTema')) el('cfgTema').value = a.tema || 'claro';
+  if(el('cfgEscala')){ el('cfgEscala').value = a.escala || 100; el('escalaTxt').textContent = (a.escala||100)+'%'; }
+  const box = el('paletas'); if(!box) return;
+  box.innerHTML = PALETAS.map(p=>`<button type="button" class="paleta ${p.id===(a.paleta||'1')?'on':''}"
+      data-paleta="${p.id}" title="${esc(p.nome)}" aria-label="${esc(p.nome)}">
+      ${p.cores.map(c=>`<span style="background:${c}"></span>`).join('')}</button>`).join('');
+  box.querySelectorAll('[data-paleta]').forEach(b=>b.onclick=()=>{
+    aparencia().paleta = b.dataset.paleta; save(); aplicarAparencia(); renderAparencia();
+  });
+}
+
+/* =========================================================
    Ajustes
    ========================================================= */
 function soDigitos(t){ return String(t||'').replace(/\D/g,''); }
 
 function renderAcessos(){
   const box = el('listaAcessos');
+  const aviso = enderecoPublicavel();
   box.innerHTML = S.responsaveis.length ? `<div style="overflow-x:auto"><table class="list">
     <thead><tr><th>Parceiro</th><th>Conta vinculada</th><th>Código do convite</th><th></th></tr></thead>
     <tbody>${S.responsaveis.map(r=>`<tr>
@@ -1744,7 +2144,15 @@ function renderAcessos(){
         ${r.tel?`<button class="btn acao-min" data-zap="${r.id}">Enviar no WhatsApp</button>`:''}
         <button class="rowbtn" data-revogar="${r.id}" title="Revogar acesso"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>`:''}
       </td></tr>`).join('')}</tbody></table></div>
-    <p class="hint" style="margin:12px 0 0">Gerar um código novo invalida o anterior na hora. O parceiro entra pelo link ou digitando o código na tela de acesso.</p>`
+    <p class="hint" style="margin:12px 0 0">Gerar um código novo invalida o anterior na hora. O parceiro entra pelo link ou digitando o código na tela de acesso.</p>
+    <div class="field" style="margin-top:12px">
+      <label>Os links são gerados a partir deste endereço</label>
+      <input type="text" readonly value="${esc(baseDoApp())}" onclick="this.select()">
+    </div>
+    ${aviso.ok ? '' : `<div class="lockbar" style="margin-top:10px">
+      <b>Este endereço não serve para enviar ao parceiro</b> — ${esc(aviso.motivo)}.
+      Abra o app pelo endereço publicado (o do GitHub Pages) antes de copiar o link, senão o parceiro cai numa
+      página de acesso negado.</div>`}`
     : '<div class="empty">Cadastre um parceiro primeiro.</div>';
 
   box.querySelectorAll('[data-gerar]').forEach(b=>b.onclick=()=>{
@@ -1772,6 +2180,16 @@ function renderAcessos(){
   });
 }
 
+/* no cabeçalho, só avisa quando NÃO está na nuvem — para não
+   confundir dados de teste locais com os dados de verdade */
+function renderTagModo(){
+  const t = el('tagModo'); if(!t) return;
+  if(window.MP_USA_FIREBASE){ t.hidden = true; return; }
+  t.hidden = false;
+  t.textContent = 'SOMENTE NESTE APARELHO';
+  t.title = 'O Firebase não está configurado: os dados ficam só neste navegador.';
+}
+
 function renderStatusNuvem(){
   const box = el('statusNuvem'); if(!box) return;
   if(window.MP_USA_FIREBASE){
@@ -1796,7 +2214,13 @@ function renderFechar(){
   };
 }
 el('cfgTitulo').oninput = ()=>{ S.cfg.titulo=el('cfgTitulo').value; save(); renderReport(); };
-el('cfgDestaque').onchange = ()=>{ S.cfg.destaque=el('cfgDestaque').value; save(); renderReport(); };
+el('cfgTema').onchange = ()=>{ aparencia().tema = el('cfgTema').value; save(); aplicarAparencia(); };
+el('cfgEscala').oninput = ()=>{
+  aparencia().escala = +el('cfgEscala').value;
+  el('escalaTxt').textContent = el('cfgEscala').value + '%';
+  aplicarAparencia();
+};
+el('cfgEscala').onchange = ()=>save();
 el('cfgTopN').onchange = ()=>{ S.cfg.topN=+el('cfgTopN').value; save(); renderReport(); };
 el('btnExport').onclick = ()=>{
   const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'}), a=document.createElement('a');
@@ -1886,9 +2310,8 @@ function preencherSelects(){
   el('extConta').innerHTML   = optContas;
   el('opCia').innerHTML = optCias;   el('edCia').innerHTML = optCias;
   el('opFonte').innerHTML = optFontes; el('edFonte').innerHTML = optFontes;
+  renderMulti('op','tipos',selOp); renderMulti('op','investidores',selOp);
   el('novaContaResp').innerHTML = '<option value="">Sem parceiro</option>'+optResps;
-  el('cfgDestaque').innerHTML = '<option value="auto">Automático (parceiro de maior resultado)</option>'+optResps;
-  el('cfgDestaque').value = S.cfg.destaque||'auto';
   Object.entries(keep).forEach(([id,v])=>{ if(v && [...el(id).options].some(o=>o.value===v)) el(id).value=v; });
 }
 
@@ -1948,7 +2371,7 @@ function refreshAll(){
 
   renderFiltroContas(); contarFiltros();
   renderOps(); renderLancamentos(); renderFinanceiro();
-  renderExtrato(); renderCadastros(); renderAcessos(); renderFechar(); renderStatusNuvem();
+  renderExtrato(); renderCadastros(); renderAcessos(); renderFechar(); renderStatusNuvem(); renderTagModo(); renderAparencia();
 }
 
 /* Chamado pelo módulo do Firebase depois do login.
@@ -1961,13 +2384,109 @@ window.__aplicarEstadoRemoto = function(estado, papel, rid){
   el('cfgTitulo').value=S.cfg.titulo||'Fechamento Mensal';
   el('cfgTopN').value=S.cfg.topN||3;
   el('loginParceiro').hidden = true;
+  aplicarAparencia();
   if(papel==='parceiro'){ entrarComoParceiro(rid); }
   else { document.body.classList.remove('parceiro'); refreshAll(); }
 };
+/* Quando o Firebase desloga, o listener dispara de novo sem usuário.
+   Se já houver um diagnóstico na tela, ele não pode ser apagado —
+   senão a tela volta ao normal sem explicar nada. */
+let diagFixo = false;
 window.__mostrarLogin = function(msg){
   el('loginParceiro').hidden = false;
+  if(!msg && diagFixo) return;
+  el('avisoLogin').className = 'erro';
   el('avisoLogin').textContent = msg || '';
   el('avisoLogin').hidden = !msg;
+  if(!msg) el('diag').hidden = true;
+};
+
+window.__avisoTopo = function(html){
+  el('avisoTopoTxt').innerHTML = html;
+  el('avisoTopo').hidden = false;
+};
+
+window.__verificando = function(email){
+  if(diagFixo) return;
+  el('loginParceiro').hidden = false;
+  el('avisoLogin').className = 'aguardando';
+  el('avisoLogin').hidden = false;
+  el('avisoLogin').textContent = 'Verificando o acesso de ' + email + '…';
+};
+
+function rodapeDiag(){
+  return `<div class="diag-acoes">
+    <button class="btn alt acao-min" id="btnRecarregar">Recarregar</button>
+    <button class="btn alt acao-min" id="btnTrocarConta">Entrar com outra conta</button>
+  </div>`;
+}
+function ligarAcoesDiag(){
+  const r = el('btnRecarregar'); if(r) r.onclick = ()=>location.reload();
+  const t = el('btnTrocarConta');
+  if(t) t.onclick = ()=>{ if(window.__trocarConta) window.__trocarConta(); else location.reload(); };
+}
+
+function blocoUid(uid){
+  return `<div class="uid"><code id="uidTxt">${esc(uid)}</code>
+    <button class="btn alt acao-min" id="copiarUid">Copiar</button></div>`;
+}
+function ligarCopiaUid(uid){
+  const b = el('copiarUid'); if(!b) return;
+  b.onclick = async ()=>{
+    try{ await navigator.clipboard.writeText(uid); b.textContent='Copiado!'; }
+    catch(e){ prompt('Copie o UID:', uid); }
+  };
+}
+
+/* conta autenticada, mas sem cadastro de administrador nem de parceiro */
+window.__semAcesso = function(email, uid){
+  diagFixo = true;
+  el('loginParceiro').hidden = false;
+  el('avisoLogin').className = 'erro';
+  el('avisoLogin').hidden = false;
+  el('avisoLogin').textContent = 'A conta ' + email + ' ainda não tem acesso.';
+  el('diag').hidden = false;
+  el('diag').innerHTML = `
+    <h4>Se você é o administrador</h4>
+    <p>Falta criar o seu registro. No console do Firebase, em <b>Firestore Database</b>, crie a coleção <code>admins</code> com um documento cujo <b>ID</b> seja este UID (pode ficar sem campos):</p>
+    ${blocoUid(uid)}
+    <p>Depois recarregue esta página.</p>
+    <h4>Se você é parceiro</h4>
+    <p>Peça ao administrador o link de convite, ou que ele cadastre este e-mail em Cadastros → Parceiros.</p>
+    ${rodapeDiag()}`;
+  ligarCopiaUid(uid); ligarAcoesDiag();
+};
+
+/* algo foi recusado pelo banco */
+window.__erroAcesso = function(e, etapa, email, uid){
+  const cod = e.code || e.message || 'erro';
+  diagFixo = true;
+  el('loginParceiro').hidden = false;
+  el('avisoLogin').className = 'erro';
+  el('avisoLogin').hidden = false;
+  el('avisoLogin').textContent = 'Não foi possível ' + etapa + ': ' + cod;
+  el('diag').hidden = false;
+
+  if(String(cod).includes('permission-denied')){
+    el('diag').innerHTML = `
+      <h4>O banco recusou a leitura${e.colecao?' de <code>'+esc(e.colecao)+'</code>':''}</h4>
+      <p>Confira, nesta ordem:</p>
+      <ol>
+        <li>Em <b>Firestore Database → Regras</b>, o conteúdo do arquivo <code>firestore.rules</code> foi colado e <b>publicado</b>. O banco novo já vem bloqueando tudo.</li>
+        <li>Existe o documento <code>admins/${esc(uid)}</code>, se você é o administrador.</li>
+        <li>O e-mail <code>${esc(email)}</code> está cadastrado em algum parceiro, se você é parceiro.</li>
+      </ol>
+      ${blocoUid(uid)}
+      ${rodapeDiag()}`;
+  }else{
+    el('diag').innerHTML = `
+      <h4>Detalhes</h4>
+      <p>Conta: <code>${esc(email)}</code></p>
+      ${blocoUid(uid)}
+      <p>Abra o console do navegador (F12) para ver a mensagem completa.</p>
+      ${rodapeDiag()}`;
+  }
+  ligarCopiaUid(uid); ligarAcoesDiag();
 };
 
 (function boot(){
@@ -1978,6 +2497,7 @@ window.__mostrarLogin = function(msg){
   el('opData').value = ini+'-15';
   el('cfgTitulo').value=S.cfg.titulo||'Fechamento Mensal';
   el('cfgTopN').value=S.cfg.topN||3;
+  aplicarAparencia();
   ligarFiltros();
   refreshAll();
   checarAcesso();
@@ -2010,9 +2530,11 @@ if (window.MP_USA_FIREBASE) {
      --------------------------------------------------------- */
 
   const ler = async (nome, ...filtros) => {
-    const ref = filtros.length ? query(collection(db, nome), ...filtros) : collection(db, nome);
-    const snap = await getDocs(ref);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    try {
+      const ref = filtros.length ? query(collection(db, nome), ...filtros) : collection(db, nome);
+      const snap = await getDocs(ref);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e) { e.colecao = nome; throw e; }
   };
 
   const vazio = {
@@ -2086,7 +2608,13 @@ if (window.MP_USA_FIREBASE) {
   const limpo = o => JSON.parse(JSON.stringify(o, (k, v) => v === undefined ? null : v));
 
   function docsDoEstado(S) {
-    const emailDe = rid => (S.responsaveis.find(r => r.id === rid) || {}).email || '';
+    // quando o parceiro ainda não tem e-mail vinculado, gravamos um valor
+    // que nunca coincide com um e-mail de verdade — assim a regra do banco
+    // não libera o documento por engano
+    const emailDe = rid => {
+      const e = (S.responsaveis.find(r => r.id === rid) || {}).email || '';
+      return e || ('sem-vinculo:' + (rid || 'nenhum'));
+    };
     const out = {};
     S.responsaveis.forEach(r => out[chave('parceiros', r.id)] =
       { nome: r.nome, email: (r.email || '').toLowerCase(), tel: r.tel || '', pix: r.pix || '', dia: r.dia || 5, codigo: r.codigo || '' });
@@ -2131,6 +2659,8 @@ if (window.MP_USA_FIREBASE) {
 
   window.MPSync = { pronto: false, usuario: null, enviar };
 
+  window.__trocarConta = async () => { sessionStorage.clear(); await signOut(auth); location.reload(); };
+
   /* ---------------- login ---------------- */
   document.getElementById('btnGoogle').onclick = async () => {
     try { await signInWithPopup(auth, new GoogleAuthProvider()); }
@@ -2145,32 +2675,57 @@ if (window.MP_USA_FIREBASE) {
 
   onAuthStateChanged(auth, async (u) => {
     if (!u) { window.__mostrarLogin(''); return; }
-    const email = (u.email || '').toLowerCase();
+    const email = u.email || '';
+    window.__verificando(email);
+    let etapa = 'verificar administrador';
     try {
       const ehAdmin = (await getDoc(doc(db, 'admins', u.uid))).exists();
+
       if (ehAdmin) {
+        etapa = 'carregar os dados';
         const estado = await carregarComoAdmin();
         anterior = docsDoEstado(estado);
         window.MPSync.pronto = true;
         window.MPSync.usuario = email;
         window.__aplicarEstadoRemoto(estado, 'admin');
+
+        // Esta conta é administradora. Se ela também estiver cadastrada
+        // como parceiro, ou se veio por um link de convite, o app entra
+        // como administrador — que é o acesso mais amplo. Avisa, para não
+        // parecer que o convite falhou.
+        const convAdm = (location.hash.match(/^#p=([A-Za-z0-9]+)$/) || [])[1];
+        const tambemParceiro = estado.responsaveis.find(r => (r.email || '') === email);
+        if (convAdm || tambemParceiro) {
+          history.replaceState(null, '', location.pathname);
+          window.__avisoTopo(
+            'Você entrou como <b>administrador</b>, porque esta conta Google está em <code>admins</code>.' +
+            (tambemParceiro ? ' Ela também está cadastrada no parceiro <b>' + tambemParceiro.nome + '</b>.' : '') +
+            ' Para conferir o que o parceiro enxerga, use <b>Mais → Portal do parceiro</b>. ' +
+            'Para testar o login dele de verdade, abra o link do convite numa janela anônima com <b>outra</b> conta Google.'
+          );
+        }
         return;
       }
+
       // parceiro: se veio por convite, vincula a conta Google no 1º acesso
+      etapa = 'localizar o cadastro do parceiro';
       const conv = (location.hash.match(/^#p=([A-Za-z0-9]+)$/) || [])[1];
       let p = await carregarComoParceiro(email);
-      if (!p && conv && await usarConvite(conv, email)) p = await carregarComoParceiro(email);
+      if (!p && conv) {
+        etapa = 'usar o convite';
+        if (await usarConvite(conv, email)) p = await carregarComoParceiro(email);
+      }
       if (p) {
         window.MPSync.usuario = email;
         window.__aplicarEstadoRemoto(p.estado, 'parceiro', p.rid);
         history.replaceState(null, '', location.pathname);
         return;
       }
-      window.__mostrarLogin('A conta ' + email + ' não tem acesso. Peça o link de convite ao administrador.');
-      await signOut(auth);
+      window.__semAcesso(email, u.uid);
+
     } catch (e) {
-      console.error(e);
-      window.__mostrarLogin('Erro ao carregar os dados: ' + (e.code || e.message));
+      console.error('[Milhas Plus]', etapa, e);
+      window.__erroAcesso(e, etapa, email, u.uid);
     }
   });
 }

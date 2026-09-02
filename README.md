@@ -31,9 +31,9 @@ Nesse ponto o app já funciona, mas gravando só no aparelho. Para os parceiros 
 3. **Criação → Authentication → Começar → Google** e ative.
 4. Ainda em Authentication, aba **Settings → Domínios autorizados**, adicione o domínio do GitHub Pages (`seuusuario.github.io`).
 
-### 2.2 Colar as credenciais
+### 2.2 Credenciais
 
-No console: **Visão geral do projeto → engrenagem → Configurações → Seus apps → Web (`</>`)**. Copie os valores e cole no topo do `index.html`:
+**Já estão preenchidas** no topo do `index.html`, com os dados do projeto `mpliminares`. Se um dia trocar de projeto, o bloco é este:
 
 ```js
 window.MP_FIREBASE = {
@@ -63,11 +63,29 @@ Para adicionar outro administrador depois, repita criando outro documento em `ad
 
 Em **Firestore → Regras**, apague o conteúdo, cole o arquivo `firestore.rules` e publique.
 
-Sem esse passo o banco fica aberto ou fechado demais — não pule.
+Sem esse passo o banco recusa tudo: um projeto novo em modo produção já nasce bloqueado, e é daí que vem o erro `permission-denied` na tela de acesso.
+
+> **Se você alterar as regras**, cuidado com um detalhe do Firestore: numa consulta, as regras não filtram os resultados — o banco confere se os filtros da consulta já garantem a regra. A condição precisa ser exatamente `resource.data.campo == request.auth.token.email`, batendo com o `where('campo','==',email)` do app. Colocar uma transformação (`.lower()`) ou uma checagem extra (`!= null`) no meio quebra esse casamento e a consulta inteira é negada, mesmo o usuário sendo dono de todos os documentos.
+
+### 2.5 Se aparecer erro na tela de acesso
+
+A própria tela diz o que falta e já mostra o seu UID com botão de copiar:
+
+| Mensagem | O que fazer |
+|---|---|
+| `permission-denied` | As regras não foram publicadas (passo 2.4). É a causa mais comum. |
+| "ainda não tem acesso" | Falta criar `admins/<seu UID>` (passo 2.3), ou o e-mail não está em nenhum parceiro. |
+| `auth/unauthorized-domain` | Falta liberar o domínio do GitHub Pages em Authentication → Settings → Domínios autorizados. |
+| `auth/popup-blocked` | O navegador bloqueou a janela do Google. Libere e tente de novo. |
 
 ---
 
 ## 3. Dar acesso a um parceiro
+
+> **Antes de copiar qualquer link:** abra o app pelo endereço publicado (o do GitHub Pages). O link do convite é montado a partir da página onde você está no momento. Se você abrir o `index.html` por um preview do Google Drive, pelo seu computador ou pelo `localhost`, o parceiro vai receber um link para lá e cair numa tela de acesso negado. A própria tela de Acessos mostra qual endereço está sendo usado e avisa quando ele não serve.
+
+> **Para testar o login do parceiro**, use uma janela anônima e **outra** conta Google. Se você abrir o convite com a mesma conta que está em `admins`, o app entra como administrador — que é o acesso mais amplo — e mostra um aviso explicando.
+
 
 1. **Mais → Cadastros → Parceiros**: preencha nome, telefone e, se já souber, o e-mail da conta Google dele.
 2. **Mais → Ajustes → Acesso dos parceiros**: clique em **Gerar código** e depois em **Enviar no WhatsApp**. A mensagem já sai pronta com o link.
