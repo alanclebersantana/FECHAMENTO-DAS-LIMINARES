@@ -539,6 +539,7 @@ body.parceiro .tabbar button[data-tab="oper"],
 body.parceiro .tabbar button[data-tab="lanc"],
 body.parceiro .tabbar button[data-tab="fin"],
 body.parceiro .subnav button[data-sub="extrato"],
+body.parceiro .subnav button[data-sub="ia"],
 body.parceiro .subnav button[data-sub="cad"],
 body.parceiro .subnav button[data-sub="cfg"]{display:none !important}
 body.parceiro .subnav{display:none}
@@ -747,6 +748,7 @@ body.parceiro .subnav{display:none}
     <div class="subnav">
       <button data-sub="portal" class="on">Portal do parceiro</button>
       <button data-sub="extrato">Extrato da conta</button>
+      <button data-sub="ia">Ler extrato — IA</button>
       <button data-sub="cad">Cadastros</button>
       <button data-sub="cfg">Ajustes</button>
     </div>
@@ -767,6 +769,28 @@ body.parceiro .subnav{display:none}
         <div class="field"><label for="extConta">Conta</label><select id="extConta"></select></div>
       </div>
       <div id="extratoOut"></div>
+    </div>
+
+    <!-- leitura de extrato por IA -->
+    <div class="sub" id="s-ia">
+      <div class="box">
+        <h3>Leitura de extrato <span class="badge open">Experimental</span></h3>
+        <p class="hint">Envie o print ou o PDF do extrato do programa. A IA agrupa os créditos que pertencem à mesma
+          promoção (parcelas + bônus), separa voos e estornos, e sugere a operação do mês para cada grupo.
+          Nada é lançado sem você conferir e confirmar.</p>
+
+        <div class="grid2">
+          <div class="field"><label for="iaConta">Conta</label><select id="iaConta"></select></div>
+          <div class="field"><label for="iaArquivo">Extrato (imagem ou PDF)</label>
+            <input type="file" id="iaArquivo" accept="image/png,image/jpeg,image/webp,application/pdf"></div>
+        </div>
+        <div class="toolbar" style="margin:12px 0 0">
+          <button class="btn" id="btnLerExtrato">Ler extrato</button>
+          <span class="muted" id="iaStatus"></span>
+        </div>
+        <div id="iaAvisoChave"></div>
+      </div>
+      <div id="iaResultado"></div>
     </div>
 
     <!-- cadastros -->
@@ -833,6 +857,21 @@ body.parceiro .subnav{display:none}
           <div class="field"><label for="cfgTopN">Linhas antes de agrupar em “Outros”</label>
             <select id="cfgTopN"><option>2</option><option selected>3</option><option>4</option><option>5</option></select></div>
         </div>
+      </div>
+      <div class="box">
+        <h3>Leitura de extrato por IA</h3>
+        <p class="hint">A leitura usa a API do Google Gemini. Gere uma chave em
+          <b>aistudio.google.com/apikey</b> e cole abaixo. Ela fica guardada só neste aparelho e não vai para a nuvem.</p>
+        <div class="field" style="max-width:460px">
+          <label for="cfgChaveIA">Chave da API Gemini</label>
+          <input type="password" id="cfgChaveIA" placeholder="AIza..." autocomplete="off">
+        </div>
+        <div class="toolbar" style="margin:12px 0 0">
+          <button class="btn alt acao-min" id="btnVerChave">Mostrar</button>
+          <button class="btn danger acao-min" id="btnLimparChave">Apagar chave</button>
+        </div>
+        <div class="lockbar" style="margin-top:12px">Restrinja a chave no Google Cloud (por site e só para a
+          <b>Generative Language API</b>). Chave usada no navegador pode ser lida por quem abrir o código da página.</div>
       </div>
       <div class="box">
         <h3>Aparência</h3>
@@ -908,9 +947,19 @@ body.parceiro .subnav{display:none}
   <div class="dlg-head"><span>Registrar pagamento</span><button type="button" data-close>&times;</button></div>
   <div class="dlg-body">
     <div class="field"><label>Parceiro</label><input type="text" id="bxParceiro" readonly></div>
+    <div id="bxResumo"></div>
     <div class="grid2">
       <div class="field"><label for="bxData">Data do pagamento</label><input type="date" id="bxData"></div>
-      <div class="field"><label for="bxValor">Valor (R$)</label><input type="number" id="bxValor" step="0.01"></div>
+      <div class="field">
+        <label for="bxValor">Valor pago agora (R$)</label>
+        <input type="number" id="bxValor" step="0.01">
+      </div>
+    </div>
+    <div class="toolbar" style="margin:0">
+      <span class="muted" style="font-size:12.5px">Pagamento parcial:</span>
+      <button type="button" class="btn alt acao-min" data-parte="0.5">metade</button>
+      <button type="button" class="btn alt acao-min" data-parte="0.3333">um terço</button>
+      <button type="button" class="btn alt acao-min" data-parte="1">tudo que falta</button>
     </div>
     <div class="field"><label for="bxPor">Registrado por</label><input type="text" id="bxPor" placeholder="Financeiro · seu nome"></div>
     <div class="field"><label for="bxComp">Comprovante</label><input type="text" id="bxComp" placeholder="comprovante-070826.pdf ou link"></div>
@@ -1086,7 +1135,22 @@ function previsaoPagamento(respId, mes){
   const d = new Date(y, m, r.dia || 5);   // dia do mês seguinte
   return d.toLocaleDateString('pt-BR');
 }
-function pagamentoDo(respId, mes){ return S.pagamentos.find(p=>p.respId===respId && p.mes===mes); }
+/* Um parceiro pode receber em várias parcelas no mesmo mês.
+   O que importa é a soma delas e o saldo que ainda falta. */
+function pagamentosDe(respId, mes){
+  return S.pagamentos.filter(p=>p.respId===respId && p.mes===mes)
+          .sort((a,b)=> a.data<b.data?-1:1);
+}
+function totalPago(respId, mes){
+  return pagamentosDe(respId, mes).reduce((a,p)=>a+(+p.valor||0),0);
+}
+const CENTAVO = 0.005;   // margem para não tropeçar em arredondamento
+function situacaoPgto(devido, pago){
+  if(pago <= CENTAVO) return 'pendente';
+  return (devido - pago) <= CENTAVO ? 'pago' : 'parcial';
+}
+const ROTULO_PGTO = {pago:'Pago', parcial:'Parcial', pendente:'Pendente'};
+const CLASSE_PGTO = {pago:'ok', parcial:'open', pendente:'wait'};
 
 /* =========================================================
    Sessão do parceiro
@@ -1244,7 +1308,12 @@ function agrupar(mk_){
     if(!rmap[rid]) rmap[rid] = {id:rid,nome:respNome(rid),total:0,milhas:0,qtd:0,contas:[],cor:a.conta.cor||'#12304C'};
     rmap[rid].total += a.total; rmap[rid].milhas += a.milhas; rmap[rid].qtd += a.qtd; rmap[rid].contas.push(a.conta.nome);
   });
-  const responsaveis = Object.values(rmap).map(r=>({...r, pct: total? r.total/total*100:0, pago: !!pagamentoDo(r.id,mk_)}))
+  const responsaveis = Object.values(rmap).map(r=>{
+    const pago = r.id ? totalPago(r.id, mk_) : 0;
+    const saldo = Math.max(0, r.total - pago);
+    return {...r, pct: total? r.total/total*100:0,
+            pago, saldo, situacao: situacaoPgto(r.total, pago)};
+  })
                         .sort((a,b)=>b.total-a.total);
 
   // operações que produziram esses lançamentos
@@ -1424,7 +1493,7 @@ function renderReport(){
       return `<div class="resp-row">
         <div class="resp-av" style="background:${cor}">${esc(iniciais(r.nome))}</div>
         <div class="resp-mid">
-          <b style="display:flex;align-items:center;gap:7px">${esc(r.nome)}${r.id?`<span class="badge ${r.pago?'ok':'wait'}">${r.pago?'Pago':'Pendente'}</span>`:''}</b>
+          <b style="display:flex;align-items:center;gap:7px">${esc(r.nome)}${r.id?`<span class="badge ${CLASSE_PGTO[r.situacao]}">${ROTULO_PGTO[r.situacao]}${r.situacao==='parcial'?' · falta '+money(r.saldo):''}</span>`:''}</b>
           <span>${esc(r.contas.join(', '))} · ${num(r.milhas)} milhas · ${r.qtd} lançamento${r.qtd>1?'s':''}</span>
           <div class="resp-bar"><i style="width:${Math.max(2,r.pct).toFixed(1)}%;background:${cor}"></i></div>
         </div>
@@ -1463,8 +1532,8 @@ function renderKpis(){
   const mk_ = mesAtual(), d = agrupar(mk_);
   const pgs = S.pagamentos.filter(p=>p.mes===mk_ && (!parceiroLogado || p.respId===parceiroLogado));
   const pagos = pgs.reduce((a,p)=>a+(+p.valor||0),0);
-  const aPagar = d.responsaveis.filter(r=>r.id && !r.pago).reduce((a,r)=>a+r.total,0);
-  const nPend = d.responsaveis.filter(r=>r.id && !r.pago).length;
+  const aPagar = d.responsaveis.filter(r=>r.id).reduce((a,r)=>a+r.saldo,0);
+  const nPend = d.responsaveis.filter(r=>r.id && r.situacao!=='pago').length;
   const lancs = d.contas.reduce((a,c)=>a+c.qtd,0);
 
   el('kpis').innerHTML = parceiroLogado ? `
@@ -1823,29 +1892,59 @@ function renderLancamentos(){
 /* =========================================================
    Financeiro
    ========================================================= */
-let baixaResp = null;
+let baixaResp = null, baixaSaldo = 0;
 function renderFinanceiro(){
   const mk_ = mesAtual(), d = agrupar(mk_);
-  const pend = d.responsaveis.filter(r=>r.id && !r.pago);
+  // fica na fila enquanto sobrar saldo, mesmo já tendo recebido parte
+  const pend = d.responsaveis.filter(r=>r.id && r.saldo > CENTAVO);
+  const somaSaldo = pend.reduce((a,r)=>a+r.saldo,0);
+
   el('listaApagar').innerHTML = pend.length ? `<div style="overflow-x:auto"><table class="list">
-    <thead><tr><th>Parceiro</th><th>Chave PIX</th><th style="text-align:right">Valor</th><th>Previsão</th><th></th></tr></thead>
-    <tbody>${pend.map(r=>`<tr>
-      <td style="font-weight:700">${esc(r.nome)}</td>
+    <thead><tr><th>Parceiro</th><th>Chave PIX</th><th style="text-align:right">Devido</th>
+      <th style="text-align:right">Já pago</th><th style="text-align:right">Falta</th>
+      <th>Previsão</th><th>Situação</th><th></th></tr></thead>
+    <tbody>${pend.map(r=>{
+      const parcelas = pagamentosDe(r.id, mk_);
+      return `<tr>
+      <td style="font-weight:700;white-space:nowrap">${esc(r.nome)}
+        ${parcelas.length?`<span class="op-sub">${parcelas.length} parcela${parcelas.length>1?'s':''} recebida${parcelas.length>1?'s':''}</span>`:''}</td>
       <td style="font-family:ui-monospace,monospace;font-size:12px;color:var(--muted)">${esc((respById(r.id)||{}).pix||'—')}</td>
-      <td style="text-align:right" class="money">${money(r.total)}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums">${money(r.total)}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)">${r.pago?money(r.pago):'—'}</td>
+      <td style="text-align:right" class="money">${money(r.saldo)}</td>
       <td style="white-space:nowrap">${previsaoPagamento(r.id, mk_)}</td>
-      <td style="text-align:right"><button class="btn" data-baixa="${r.id}" style="padding:7px 13px;font-size:13px">Dar baixa</button></td>
-    </tr>`).join('')}</tbody></table></div>`
+      <td><span class="badge ${CLASSE_PGTO[r.situacao]}">${ROTULO_PGTO[r.situacao]}</span></td>
+      <td style="text-align:right"><button class="btn acao-min" data-baixa="${r.id}">Dar baixa</button></td>
+    </tr>`;}).join('')}</tbody>
+    <tfoot><tr><td colspan="4" style="font-weight:800">Total a pagar</td>
+      <td style="text-align:right" class="money">${money(somaSaldo)}</td><td colspan="3"></td></tr></tfoot>
+    </table></div>`
     : `<div class="empty">Nada pendente em ${esc(mesLabel(mk_))}.</div>`;
 
   el('listaApagar').querySelectorAll('[data-baixa]').forEach(b=>b.onclick=()=>{
     baixaResp = b.dataset.baixa;
     const r = d.responsaveis.find(x=>x.id===baixaResp);
+    baixaSaldo = r.saldo;
     el('bxParceiro').value = r.nome;
-    el('bxValor').value = r.total.toFixed(2);
+    el('bxValor').value = r.saldo.toFixed(2);   // já vem com o que falta
     el('bxData').value = new Date().toISOString().slice(0,10);
     el('bxPor').value = 'Financeiro';
     el('bxComp').value = '';
+
+    const parcelas = pagamentosDe(r.id, mk_);
+    el('bxResumo').innerHTML = `
+      <div class="totbar" style="margin:0">
+        <div><span>Devido no mês</span><b>${money(r.total)}</b></div>
+        <div><span>Já pago</span><b class="g">${money(r.pago)}</b></div>
+        <div><span>Falta</span><b class="r">${money(r.saldo)}</b></div>
+        <div class="push"></div>
+      </div>
+      ${parcelas.length?`<div class="detalhes" style="margin-top:10px">${parcelas.map(x=>`
+        <div class="detalhe-linha" style="grid-template-columns:auto 1fr auto">
+          <b>${x.data.split('-').reverse().join('/')}</b>
+          <span style="font-size:12px;color:var(--muted)">${esc(x.comprovante||'sem comprovante')}</span>
+          <b>${money(x.valor)}</b>
+        </div>`).join('')}</div>`:''}`;
     el('dlgBaixa').showModal();
   });
 
@@ -1870,10 +1969,21 @@ function renderFinanceiro(){
 el('salvarBaixa').onclick = ()=>{
   const v = parseFloat(el('bxValor').value);
   if(!el('bxData').value || isNaN(v)){ alert('Preencha data e valor.'); return; }
+  if(v <= 0){ alert('O valor precisa ser maior que zero.'); return; }
+  if(v - baixaSaldo > CENTAVO &&
+     !confirm(`O valor informado (${money(v)}) é maior do que falta (${money(baixaSaldo)}). Registrar assim mesmo?`)) return;
+
   S.pagamentos.push({id:uid(),respId:baixaResp,mes:mesAtual(),valor:v,data:el('bxData').value,
                      por:el('bxPor').value.trim(),comprovante:el('bxComp').value.trim()});
   save(); el('dlgBaixa').close(); refreshAll();
 };
+
+/* atalhos de valor no diálogo da baixa */
+document.addEventListener('click', e=>{
+  const b = e.target.closest('[data-parte]'); if(!b) return;
+  const fracao = parseFloat(b.dataset.parte);
+  el('bxValor').value = (baixaSaldo * fracao).toFixed(2);
+});
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('dialog').close());
 
 /* =========================================================
@@ -1886,15 +1996,24 @@ function renderPortal(){
               .sort((a,b)=> a.data>b.data?1:-1);
   const total = ls.reduce((a,l)=>a+(+l.resultado||0),0);
   const milhas = ls.reduce((a,l)=>a+(+l.milhas||0),0);
-  const pag = pagamentoDo(rid, mk_);
-  const pagos = S.pagamentos.filter(p=>p.respId===rid);
+  const recebido = totalPago(rid, mk_);
+  const falta = Math.max(0, total - recebido);
+  const sit = situacaoPgto(total, recebido);
+  const doMes = pagamentosDe(rid, mk_);
+  const pagos = S.pagamentos.filter(p=>p.respId===rid).sort((a,b)=> a.data<b.data?1:-1);
 
   el('portalOut').innerHTML = `
     <div class="portal">
-      <div class="big"><span>A receber — ${esc(mesLabel(mk_))}</span><b>${money(total)}</b></div>
-      <div class="sm"><span>Previsão de pagamento</span><b>${pag ? 'Pago em '+pag.data.split('-').reverse().join('/') : previsaoPagamento(rid,mk_)}</b></div>
+      <div class="big"><span>${sit==='pago'?'Recebido':'Ainda a receber'} — ${esc(mesLabel(mk_))}</span>
+        <b>${money(sit==='pago' ? total : falta)}</b></div>
+      <div class="sm"><span>${sit==='pago'?'Pagamento' : 'Previsão de pagamento'}</span>
+        <b>${sit==='pago' && doMes.length ? 'Pago em '+doMes[doMes.length-1].data.split('-').reverse().join('/')
+             : previsaoPagamento(rid,mk_)}</b></div>
+      ${sit==='parcial' ? `<div class="sm"><span>Já recebido</span><b>${money(recebido)} de ${money(total)}</b></div>` : ''}
       <div class="sm"><span>Milhas acumuladas no mês</span><b>${num(milhas)}</b></div>
     </div>
+    ${sit==='parcial' ? `<div class="lockbar">Pagamento parcial: você já recebeu <b>${money(recebido)}</b>
+      dos <b>${money(total)}</b> do mês. Restam <b>${money(falta)}</b>.</div>` : ''}
     <div class="box">
       <h3>Detalhe por conta</h3>
       ${ls.length?`<div style="overflow-x:auto"><table class="list">
@@ -1907,7 +2026,7 @@ function renderPortal(){
             <td><span style="font-weight:600">${esc(o?o.tipo:'—')}</span><span class="op-sub">${esc(o?o.ref:'')}</span></td>
             <td style="text-align:right;font-variant-numeric:tabular-nums">${num(l.milhas)}</td>
             <td style="text-align:right" class="money">${money(l.resultado)}</td>
-            <td><span class="badge ${pag?'ok':'wait'}">${pag?'Pago':'Creditado'}</span></td></tr>`;
+            <td><span class="badge ${CLASSE_PGTO[sit]}">${sit==='pago'?'Pago':sit==='parcial'?'Parcial':'Creditado'}</span></td></tr>`;
         }).join('')}</tbody></table></div>`:'<div class="empty">Nenhum lançamento neste mês.</div>'}
     </div>
     <div class="box">
@@ -1956,6 +2075,193 @@ function renderExtrato(){
           <td style="text-align:right" class="money">${money(l.resultado)}</td></tr>`; }).join('')}</tbody></table></div>`
         :'<div class="empty">Sem lançamentos neste mês.</div>'}
     </div>`;
+}
+
+
+/* =========================================================
+   Leitura de extrato por IA (Google Gemini)
+   A chave fica só no aparelho — nunca é enviada ao Firestore.
+   ========================================================= */
+const CHAVE_IA = 'mp_chave_gemini';
+const chaveIA    = () => localStorage.getItem(CHAVE_IA) || '';
+const setChaveIA = v => v ? localStorage.setItem(CHAVE_IA, v) : localStorage.removeItem(CHAVE_IA);
+
+let creditosLidos = [];
+
+function lerArquivoBase64(f){
+  return new Promise((ok, erro)=>{
+    const r = new FileReader();
+    r.onload  = ()=>ok(String(r.result).split(',')[1]);
+    r.onerror = ()=>erro(new Error('Não consegui ler o arquivo.'));
+    r.readAsDataURL(f);
+  });
+}
+
+const PROMPT_EXTRATO = `Você recebe o extrato de um programa de fidelidade aéreo (Smiles, TudoAzul, Latam Pass).
+Sua tarefa é listar os CRÉDITOS DE MILHAS, agrupando as linhas que pertencem à mesma promoção.
+
+Regras:
+- Parcelas de uma mesma transferência (ex.: "5x 85.600") e o bônus correspondente formam UM grupo só.
+- Some as parcelas em "base" e os bônus em "bonus". "total" é a soma dos dois.
+- Voos, resgates, expirações e estornos NÃO são créditos de promoção: marque tipo "ignorar".
+- "data" é a data do crédito principal, no formato AAAA-MM-DD.
+- "descricao" resume como apareceu no extrato, incluindo o fornecedor (Livelo, Inter, C6, Esfera, Clube…).
+- Não invente linhas. Se um número estiver ilegível, use 0.
+
+Responda SOMENTE com um JSON neste formato, sem texto em volta:
+{"periodo":{"de":"AAAA-MM-DD","ate":"AAAA-MM-DD"},
+ "grupos":[{"data":"AAAA-MM-DD","descricao":"...","fornecedor":"...","base":0,"bonus":0,"total":0,"tipo":"credito"}]}`;
+
+async function chamarGemini(base64, mime){
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + encodeURIComponent(chaveIA());
+  const resp = await fetch(url, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      contents:[{parts:[{inline_data:{mime_type:mime, data:base64}},{text:PROMPT_EXTRATO}]}],
+      generationConfig:{temperature:0, responseMimeType:'application/json'}
+    })
+  });
+  if(!resp.ok){
+    const t = await resp.text();
+    throw new Error(resp.status===400 ? 'Chave recusada ou arquivo não aceito.' :
+                    resp.status===403 ? 'A chave não tem permissão para a Generative Language API.' :
+                    resp.status===429 ? 'Limite de uso da chave atingido. Tente mais tarde.' :
+                    'Erro ' + resp.status + ': ' + t.slice(0,160));
+  }
+  const dados = await resp.json();
+  const texto = (dados.candidates?.[0]?.content?.parts || []).map(p=>p.text||'').join('');
+  try{ return JSON.parse(texto.replace(/```json|```/g,'').trim()); }
+  catch(e){ throw new Error('A IA respondeu num formato inesperado. Tente um print mais nítido.'); }
+}
+
+/* sugere a operação do mês mais parecida com o grupo lido */
+function sugerirOperacao(g){
+  const mes = mesKey(g.data || mesAtual());
+  const doMes = S.operacoes.filter(o=>mesKey(o.data)===mes);
+  const alvo = (g.descricao + ' ' + (g.fornecedor||'')).toUpperCase();
+  const porFonte = doMes.filter(o=>o.fonte && alvo.includes(o.fonte.toUpperCase()));
+  const lista = porFonte.length ? porFonte : doMes;
+  if(!lista.length) return '';
+  // entre as candidatas, a de data mais próxima
+  const dist = o => Math.abs(new Date(o.data) - new Date(g.data || o.data));
+  return lista.slice().sort((a,b)=>dist(a)-dist(b))[0].id;
+}
+
+el('btnLerExtrato').onclick = async ()=>{
+  const f = el('iaArquivo').files[0];
+  if(!chaveIA()){ alert('Cadastre a chave da API Gemini em Mais → Ajustes.'); return; }
+  if(!f){ alert('Escolha o print ou o PDF do extrato.'); return; }
+  if(!el('iaConta').value){ alert('Escolha a conta.'); return; }
+
+  const st = el('iaStatus');
+  st.textContent = 'Lendo o extrato…';
+  el('btnLerExtrato').disabled = true;
+  try{
+    const b64 = await lerArquivoBase64(f);
+    const r = await chamarGemini(b64, f.type || 'image/png');
+    const grupos = (r.grupos || []).map(g=>({...g, total: +g.total || (+g.base||0)+(+g.bonus||0)}));
+    creditosLidos = grupos.map(g=>({
+      ...g,
+      marcado: g.tipo !== 'ignorar' && g.total > 0,
+      operacaoId: g.tipo === 'ignorar' ? '' : sugerirOperacao(g)
+    }));
+    st.textContent = '';
+    renderCreditos(r.periodo);
+  }catch(e){
+    st.textContent = '';
+    el('iaResultado').innerHTML = `<div class="box"><div class="lockbar" style="margin:0">
+      <b>Não deu para ler:</b> ${esc(e.message)}</div></div>`;
+  }finally{
+    el('btnLerExtrato').disabled = false;
+  }
+};
+
+function renderCreditos(periodo){
+  const uteis = creditosLidos.filter(c=>c.tipo!=='ignorar');
+  const fora  = creditosLidos.filter(c=>c.tipo==='ignorar');
+  const opcoesOp = g => '<option value="">— escolher —</option>' +
+    S.operacoes.filter(o=>mesKey(o.data)===mesKey(g.data||mesAtual()))
+      .map(o=>`<option value="${o.id}" ${o.id===g.operacaoId?'selected':''}>${esc(o.ref)}</option>`).join('');
+
+  if(!creditosLidos.length){
+    el('iaResultado').innerHTML = '<div class="box"><div class="empty">Nenhum crédito identificado neste extrato.</div></div>';
+    return;
+  }
+
+  el('iaResultado').innerHTML = `
+    <div class="kpis">
+      <div class="kpi"><span>Período lido</span><b style="font-size:calc(16px * var(--escala))">${
+        periodo && periodo.de ? esc(periodo.de.split('-').reverse().join('/')) + ' – ' + esc((periodo.ate||'').split('-').reverse().join('/')) : '—'}</b></div>
+      <div class="kpi"><span>Grupos de crédito</span><b>${uteis.length}</b><em>parcelas e bônus já somados</em></div>
+      <div class="kpi"><span>Ignorados</span><b>${fora.length}</b><em>voos, resgates e estornos</em></div>
+    </div>
+    <div class="box">
+      <h3>Créditos identificados</h3>
+      <p class="hint">Confira o vínculo sugerido antes de gerar. As milhas podem ser ajustadas.</p>
+      <div style="overflow-x:auto"><table class="list">
+        <thead><tr><th></th><th>Crédito em</th><th>Como apareceu</th>
+          <th style="text-align:right">Base</th><th style="text-align:right">Bônus</th>
+          <th style="text-align:right">Milhas</th><th>Operação vinculada</th></tr></thead>
+        <tbody>${creditosLidos.map((c,i)=>`<tr ${c.tipo==='ignorar'?'style="opacity:.55"':''}>
+          <td style="width:30px"><input type="checkbox" data-ic="${i}" ${c.marcado?'checked':''}
+            style="width:17px;height:17px;accent-color:var(--navy)"></td>
+          <td style="white-space:nowrap">${esc((c.data||'').split('-').reverse().join('/'))}</td>
+          <td>${esc(c.descricao||'—')}${c.tipo==='ignorar'?'<span class="op-sub">ignorado pela IA</span>':''}</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums">${num(c.base||0)}</td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums">${num(c.bonus||0)}</td>
+          <td style="text-align:right"><input type="number" data-im="${i}" value="${c.total||0}" style="width:120px;text-align:right"></td>
+          <td><select data-io="${i}" style="min-width:190px">${opcoesOp(c)}</select></td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+      <div class="totbar" id="iaTotais"></div>
+      <div class="toolbar" style="margin:12px 0 0">
+        <button class="btn" id="btnGerarLanc">Gerar lançamentos na conta</button>
+        <button class="btn alt" id="btnDescartarIA">Descartar leitura</button>
+      </div>
+    </div>`;
+
+  const res = el('iaResultado');
+  res.querySelectorAll('[data-ic]').forEach(i=>i.onchange=()=>{ creditosLidos[+i.dataset.ic].marcado = i.checked; totaisIA(); });
+  res.querySelectorAll('[data-im]').forEach(i=>i.oninput =()=>{ creditosLidos[+i.dataset.im].total = parseFloat(i.value)||0; totaisIA(); });
+  res.querySelectorAll('[data-io]').forEach(s=>s.onchange=()=>{ creditosLidos[+s.dataset.io].operacaoId = s.value; });
+  el('btnGerarLanc').onclick = gerarLancamentosIA;
+  el('btnDescartarIA').onclick = ()=>{ creditosLidos=[]; el('iaResultado').innerHTML=''; el('iaArquivo').value=''; };
+  totaisIA();
+}
+
+function totaisIA(){
+  const sel = creditosLidos.filter(c=>c.marcado);
+  const box = el('iaTotais'); if(!box) return;
+  box.innerHTML = `
+    <div><span>Selecionados</span><b>${sel.length}</b></div>
+    <div><span>Milhas</span><b>${num(sel.reduce((a,c)=>a+(+c.total||0),0))}</b></div>
+    <div class="push"></div>`;
+}
+
+function gerarLancamentosIA(){
+  const contaId = el('iaConta').value;
+  const sel = creditosLidos.filter(c=>c.marcado && c.total>0);
+  if(!sel.length){ alert('Marque ao menos um crédito.'); return; }
+  const semOp = sel.filter(c=>!c.operacaoId);
+  if(semOp.length){ alert(semOp.length+' crédito(s) estão sem operação vinculada. Escolha a operação de cada um.'); return; }
+  if(fechado(mesAtual())){ alert('Mês fechado. Reabra em Ajustes para lançar.'); return; }
+  if(!confirm(`Gerar ${sel.length} lançamento(s) na conta ${contaById(contaId).nome}?`)) return;
+
+  const tocadas = new Set();
+  sel.forEach(c=>{
+    const o = opById(c.operacaoId); if(!o) return;
+    S.lancamentos.push({id:uid(), operacaoId:o.id, opRef:o.ref, opTipo:o.tipo,
+      contaId, data:c.data || o.data, cia:o.cia, fonte:o.fonte,
+      milhas:c.total, cpmVenda:o.cpmVenda, cpmCusto:0,
+      valor:0, custo:0, resultado:0, obs:'lido do extrato'});
+    tocadas.add(o.id);
+  });
+  // recalcula cada operação afetada: no modo "custo total" o rateio muda
+  tocadas.forEach(id=>recalcularOperacao(opById(id)));
+  save();
+  creditosLidos = []; el('iaResultado').innerHTML=''; el('iaArquivo').value='';
+  refreshAll();
+  alert('Lançamentos gerados. Confira em Lançamentos.');
 }
 
 /* =========================================================
@@ -2211,6 +2517,29 @@ function renderTagModo(){
   t.title = 'O Firebase não está configurado: os dados ficam só neste navegador.';
 }
 
+function renderChaveIA(){
+  const campo = el('cfgChaveIA'); if(!campo) return;
+  campo.value = chaveIA();
+  campo.onchange = ()=>{ setChaveIA(campo.value.trim()); renderAvisoChaveIA(); };
+  el('btnVerChave').onclick = ()=>{
+    const escondido = campo.type === 'password';
+    campo.type = escondido ? 'text' : 'password';
+    el('btnVerChave').textContent = escondido ? 'Ocultar' : 'Mostrar';
+  };
+  el('btnLimparChave').onclick = ()=>{
+    if(!confirm('Apagar a chave guardada neste aparelho?')) return;
+    setChaveIA(''); campo.value=''; renderAvisoChaveIA();
+  };
+  renderAvisoChaveIA();
+}
+
+function renderAvisoChaveIA(){
+  const box = el('iaAvisoChave'); if(!box) return;
+  box.innerHTML = chaveIA() ? '' :
+    `<div class="lockbar" style="margin-top:12px">Falta cadastrar a chave da API Gemini em
+     <b>Mais → Ajustes → Leitura de extrato por IA</b>.</div>`;
+}
+
 function renderStatusNuvem(){
   const box = el('statusNuvem'); if(!box) return;
   if(window.MP_USA_FIREBASE){
@@ -2296,7 +2625,10 @@ el('btnZap').onclick = ()=>{
   t+=`*Resultado do mês:* ${money(d.total)}\n*Milhas:* ${num(d.milhas)}\n*Custo:* ${money(d.custo)}\n\n*Por companhia*\n`;
   d.cias.forEach(c=> t+=`• ${c.nome}: ${money(c.valor)} (${c.pct.toFixed(1).replace('.',',')}%)\n`);
   t+=`\n*Por parceiro*\n`;
-  d.responsaveis.forEach(r=> t+=`• ${r.nome}: ${money(r.total)} — ${r.pago?'pago':'a pagar'}\n`);
+  d.responsaveis.forEach(r=> t+=`• ${r.nome}: ${money(r.total)} — ${
+    r.situacao==='pago' ? 'pago'
+    : r.situacao==='parcial' ? 'pago '+money(r.pago)+', falta '+money(r.saldo)
+    : 'a pagar'}\n`);
   t+=`\n*Consolidado:* ${money(d.total)}`;
   const fa=filtrosAtivos(); if(fa.length) t+=`\n\n_Filtros: ${fa.join(' · ')}_`;
   window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');
@@ -2322,7 +2654,7 @@ document.querySelectorAll('.subnav button').forEach(b=>{
 });
 
 function preencherSelects(){
-  const keep={}; ['lancResp','lancConta','lancCia','lancFonte','portalResp','extConta','opCia','opFonte','novaContaResp'].forEach(id=>keep[id]=el(id).value);
+  const keep={}; ['lancResp','lancConta','lancCia','lancFonte','portalResp','extConta','iaConta','opCia','opFonte','novaContaResp'].forEach(id=>keep[id]=el(id).value);
   if(parceiroLogado){ el('portalResp').innerHTML = `<option value="${parceiroLogado}">${esc(respNome(parceiroLogado))}</option>`; }
   const minhas = parceiroLogado ? S.contas.filter(c=>c.respId===parceiroLogado) : S.contas;
   const optContas = minhas.map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join('');
@@ -2343,6 +2675,7 @@ function preencherSelects(){
   el('lancFonte').innerHTML = '<option value="todas">Todos</option>'+optFontes;
   el('portalResp').innerHTML = optResps;
   el('extConta').innerHTML   = optContas;
+  el('iaConta').innerHTML    = optContas;
   el('opCia').innerHTML = optCias;   el('edCia').innerHTML = optCias;
   el('opFonte').innerHTML = optFontes; el('edFonte').innerHTML = optFontes;
   renderMulti('op','tipos',selOp); renderMulti('op','investidores',selOp);
@@ -2400,13 +2733,13 @@ function refreshAll(){
     // parceiros fica no HTML da página, mesmo escondido
     ['listaOps','lancBox','listaApagar','listaPagos','extratoOut',
      'listaResps','listaContas','listaCias','listaFontes','listaAcessos',
-     'fecharOut','filtroContas','boxLancar'].forEach(id=>{ const n=el(id); if(n) n.innerHTML=''; });
+     'fecharOut','filtroContas','boxLancar','iaResultado'].forEach(id=>{ const n=el(id); if(n) n.innerHTML=''; });
     return;
   }
 
   renderFiltroContas(); contarFiltros();
   renderOps(); renderLancamentos(); renderFinanceiro();
-  renderExtrato(); renderCadastros(); renderAcessos(); renderFechar(); renderStatusNuvem(); renderTagModo(); renderAparencia();
+  renderExtrato(); renderCadastros(); renderAcessos(); renderFechar(); renderStatusNuvem(); renderTagModo(); renderAparencia(); renderChaveIA();
 }
 
 /* Chamado pelo módulo do Firebase depois do login.
@@ -2544,15 +2877,19 @@ window.__erroAcesso = function(e, etapa, email, uid){
 };
 
 (function boot(){
-  if(window.MP_USA_FIREBASE){ el('loginParceiro').hidden = false; return; }   // a nuvem cuida do boot
+  // Os eventos dos filtros precisam ser ligados nos dois caminhos.
+  // Antes ficavam só no boot local, e com o Firebase ligado o boot saía
+  // antes daqui — por isso os filtros de Lançamentos e Extrato não reagiam.
+  ligarFiltros();
+  aplicarAparencia();
+
+  if(window.MP_USA_FIREBASE){ el('loginParceiro').hidden = false; return; }   // a nuvem cuida do resto
   const meses=[...new Set(S.lancamentos.map(l=>mesKey(l.data)))].sort();
   const ini = meses.length?meses[meses.length-1]:new Date().toISOString().slice(0,7);
   el('mesRef').value=ini; el('lancMes').value=ini;
   el('opData').value = ini+'-15';
   el('cfgTitulo').value=S.cfg.titulo||'Fechamento Mensal';
   el('cfgTopN').value=S.cfg.topN||3;
-  aplicarAparencia();
-  ligarFiltros();
   refreshAll();
   checarAcesso();
 })();

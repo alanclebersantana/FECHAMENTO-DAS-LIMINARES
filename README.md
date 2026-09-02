@@ -101,6 +101,23 @@ Para tirar o acesso, use o **X** ao lado do código e apague o e-mail do cadastr
 
 ---
 
+## 3.1 Leitura de extrato por IA
+
+Em **Mais → Ler extrato — IA** você envia o print ou o PDF do extrato do programa. A IA agrupa parcelas e bônus da mesma promoção, separa voos e estornos, e sugere a operação do mês de cada grupo. Você confere, ajusta as milhas se precisar, e só então gera os lançamentos.
+
+Para funcionar, precisa de uma chave da API do Google Gemini:
+
+1. Gere em <https://aistudio.google.com/apikey>.
+2. Cole em **Mais → Ajustes → Leitura de extrato por IA**.
+
+A chave fica guardada só no aparelho — não vai para o Firestore nem para os outros dispositivos, então precisa ser cadastrada em cada um.
+
+> **Restrinja a chave** no Google Cloud: limite por site (os domínios do app) e apenas à *Generative Language API*. Uma chave usada no navegador pode ser lida por quem abrir o código da página; a restrição é o que impede que seja usada em outro lugar.
+
+Ao gerar, o valor e o custo de cada lançamento saem dos parâmetros da operação vinculada. Se a operação estiver no modo "custo total", o rateio é refeito considerando as contas novas.
+
+---
+
 ## 4. O que cada um enxerga
 
 | | Administrador | Parceiro |
