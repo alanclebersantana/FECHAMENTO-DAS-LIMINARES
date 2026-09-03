@@ -168,6 +168,11 @@ Se `apiKey` ficar vazio, o app roda sem login, guardando tudo no navegador, e o 
 
 ## 7. Instalar
 
-- **Android/Chrome:** menu ⋮ → Adicionar à tela inicial.
-- **iPhone/Safari:** Compartilhar → Adicionar à Tela de Início.
-- **PC:** ícone de instalar na barra de endereço.
+Mande para as pessoas o endereço `.../instalar.html`. A página detecta o aparelho, abre já no passo certo e traz o botão de instalar quando o navegador permite.
+
+Resumo do que ela explica:
+
+- **Android (Chrome):** botão “Instalar agora”, ou menu ⋮ → Instalar aplicativo.
+- **iPhone e iPad:** obrigatoriamente no **Safari** → Compartilhar → Adicionar à Tela de Início.
+- **Windows (Chrome/Edge):** botão “Instalar agora”, ou o ícone de instalar na barra de endereço.
+- **Mac:** Safari → Arquivo → Adicionar ao Dock; no Chrome/Edge, o ícone da barra de endereço.
