@@ -1,4 +1,4 @@
-const CACHE = 'mp-central-v2';
+const CACHE = 'mp-central-v3';
 const ASSETS = ['./','./index.html','./manifest.json','./logo.png',
   './icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png'];
 
