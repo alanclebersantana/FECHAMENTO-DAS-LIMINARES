@@ -33,7 +33,7 @@
   // Chave da API do Google Gemini, usada na leitura de extrato.
   // Fica gravada aqui, no próprio app: vale para todos os aparelhos,
   // sem precisar cadastrar em cada um. Gere em aistudio.google.com/apikey
-  window.MP_GEMINI = "AQ.Ab8RN6I66HHoqUMC2L23FDuS_FNZSdmv9vt3GIbYyHWZlDctbw";
+  window.MP_GEMINI = "";
 </script>
 
 <style>
@@ -717,14 +717,44 @@ body.parceiro .subnav{display:none}
         <div class="checkrow" id="opTipos"></div>
         <div id="opTiposDet"></div>
       </div>
-      <div class="field" style="margin-top:14px">
-        <label>Investidor <button type="button" class="mini-add" data-novo="investidor">+ novo</button></label>
-        <div class="checkrow" id="opInvestidores"></div>
-        <div id="opInvestidoresDet"></div>
-      </div>
-      <p class="hint" style="margin:12px 0 0">Marque quantos tipos e investidores quiser. Com dois ou mais, aparece um campo para detalhar cada um.</p>
+      <p class="hint" style="margin:12px 0 0">Marque quantos tipos quiser. Com dois ou mais, aparece um campo para detalhar cada um.</p>
+      <p class="hint" style="margin:6px 0 0">O <b>investidor</b> é escolhido conta a conta, na hora de lançar.</p>
       <p class="hint" style="margin:6px 0 0">No modo <b>custo total</b>, o CPM de custo é calculado no lançamento, com rateio proporcional às milhas de cada conta.</p>
       <div style="margin-top:12px"><button class="btn" id="btnSalvarOp">Cadastrar operação</button></div>
+    </div>
+
+    <div class="box">
+      <h3>Adicionar clube</h3>
+      <p class="hint">Mensalidade de clube de pontos. Vai direto para as contas escolhidas e
+        não entra na lista de operações. A mesma conta pode receber o clube quantas vezes precisar.</p>
+
+      <div class="field">
+        <label>Programa</label>
+        <div class="checkrow" id="clProgramas"></div>
+      </div>
+      <div class="field" id="wrapClOutro" hidden style="margin-top:10px;max-width:280px">
+        <label for="clOutro">Nome do programa</label>
+        <input type="text" id="clOutro" placeholder="ex.: TudoAzul Clube">
+      </div>
+
+      <div class="grid2" style="margin-top:12px">
+        <div class="field"><label for="clData">Data</label><input type="date" id="clData"></div>
+        <div class="field"><label for="clValor">Valor do clube (R$)</label>
+          <input type="number" id="clValor" step="0.01" placeholder="79,90"></div>
+        <div class="field"><label for="clPontos">Pontos recebidos</label>
+          <input type="number" id="clPontos" placeholder="10000"></div>
+        <div class="field"><label for="clInvestidor">Investidor</label>
+          <select id="clInvestidor"></select></div>
+      </div>
+      <p class="hint" style="margin:10px 0 0">O valor e os pontos valem <b>para cada conta marcada</b>.</p>
+
+      <div class="toolbar" style="margin:14px 0 10px">
+        <button class="btn alt acao-min" id="clTodas" type="button">Marcar todas</button>
+        <button class="btn alt acao-min" id="clNenhuma" type="button">Desmarcar</button>
+      </div>
+      <div id="clContas"></div>
+      <div class="totbar" id="clTotais"></div>
+      <div style="margin-top:12px"><button class="btn" id="btnLancarClube">Lançar clube nas contas</button></div>
     </div>
 
     <div class="box">
@@ -964,8 +994,6 @@ body.parceiro .subnav{display:none}
     </div>
     <div class="field"><label>Tipo da operação</label>
       <div class="checkrow" id="edTipos"></div><div id="edTiposDet"></div></div>
-    <div class="field"><label>Investidor</label>
-      <div class="checkrow" id="edInvestidores"></div><div id="edInvestidoresDet"></div></div>
     <p class="hint" id="edAviso" style="margin:0"></p>
   </div>
   <div class="dlg-foot">
@@ -1122,6 +1150,12 @@ function seed(){
   };
 }
 
+/* O investidor é decidido conta a conta: a mesma promoção pode ser
+   bancada pela Milhas Plus numa conta e pelo parceiro em outra. */
+const INVESTIDORES = ['MILHAS PLUS','PARCEIRO'];
+const opcoesInvestidor = sel => INVESTIDORES.map(i=>
+  `<option value="${i}" ${i===sel?'selected':''}>${i}</option>`).join('');
+
 function nomesDe(lista){ return (lista||[]).map(x=>x.nome).join(' + ') || '—'; }
 
 function migrar(){
@@ -1142,7 +1176,17 @@ function migrar(){
   if(!S.filtro) S.filtro = {resp:'todos',cia:'todas',fonte:'todas',min:'',max:''};
   if(typeof S.chaveIA !== 'string') S.chaveIA = '';
   S.responsaveis.forEach(r=>{ if(r.tel===undefined) r.tel=''; if(r.codigo===undefined) r.codigo=''; if(r.email===undefined) r.email=''; });
-  S.lancamentos.forEach(l=>{ if(l.resultado===undefined) l.resultado = +l.valor||0; if(l.milhas===undefined) l.milhas=0; if(l.custo===undefined) l.custo=0; });
+  S.lancamentos.forEach(l=>{
+    if(l.resultado===undefined) l.resultado = +l.valor||0;
+    if(l.milhas===undefined) l.milhas=0;
+    if(l.custo===undefined) l.custo=0;
+    // lançamentos antigos herdam o investidor que estava na operação
+    if(!l.investidor){
+      const o = S.operacoes.find(x=>x.id===l.operacaoId);
+      const antigo = o && (o.investidor||'').split(' + ')[0];
+      l.investidor = INVESTIDORES.includes(antigo) ? antigo : INVESTIDORES[0];
+    }
+  });
 }
 migrar();
 
@@ -1352,7 +1396,7 @@ function agrupar(mk_){
   // operações que produziram esses lançamentos
   const omap = {};
   lancs.forEach(l=>{
-    const k = l.operacaoId||'—';
+    const k = l.operacaoId || ('clube:' + (l.opRef||'Clube'));
     if(!omap[k]) omap[k] = {op: refOp(l), qtd:0, milhas:0, custo:0, resultado:0};
     omap[k].qtd++; omap[k].milhas+=(+l.milhas||0); omap[k].custo+=(+l.custo||0); omap[k].resultado+=(+l.resultado||0);
   });
@@ -1588,35 +1632,73 @@ function renderKpis(){
 /* =========================================================
    Operações
    ========================================================= */
-function renderOps(){
-  const ops = S.operacoes.slice().sort((a,b)=> a.data<b.data?1:-1);
-  el('listaOps').innerHTML = ops.length ? `<div style="overflow-x:auto"><table class="list">
-    <thead><tr><th>Data</th><th>Promoção</th><th>CIA</th><th>Fornecedor</th><th>Investidor</th><th class="n">CPM venda</th><th>Custo</th><th>Status</th><th></th></tr></thead>
-    <tbody>${ops.map(o=>{
-      const usados = S.lancamentos.filter(l=>l.operacaoId===o.id);
-      const custoTxt = o.modo==='sem' ? '—' : o.modo==='cpm' ? money(o.cpmCusto)+'/mil' : money(o.custoTotal);
-      return `<tr>
-        <td style="white-space:nowrap">${o.data.split('-').reverse().join('/')}</td>
-        <td><span class="op-ref">${esc(o.ref)}</span><span class="op-sub">${esc(o.tipo)}</span></td>
-        <td style="color:${ciaColor(o.cia)};font-weight:700">${esc(o.cia)}</td>
-        <td>${esc(o.fonte)}</td>
-        <td style="font-size:12px;color:var(--muted)">${esc(o.investidor)}</td>
-        <td style="text-align:right;white-space:nowrap">${money(o.cpmVenda)}</td>
-        <td style="white-space:nowrap">${custoTxt}</td>
-        <td><span class="badge ${o.status==='lancada'?'ok':'open'}">${o.status==='lancada'?'Lançada':'Aberta'}</span>
-            ${usados.length?`<span class="op-sub">${usados.length} conta${usados.length>1?'s':''}</span>`:''}</td>
-        <td><div class="acoes">
-          <button class="btn alt acao-min" data-editar="${o.id}" title="Editar os dados da operação">
-            <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Editar</button>
-          <button class="btn alt acao-min" data-lancar="${o.id}">${usados.length?'Relançar':'Lançar'} »</button>
-          ${usados.length?`<button class="btn alt acao-min acao-ico" data-desfazer="${o.id}" title="Desfazer lançamento nas contas" aria-label="Desfazer lançamento">
-            <svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg></button>`:''}
-        </div></td></tr>`;
-    }).join('')}</tbody></table></div>` : '<div class="empty">Nenhuma operação cadastrada.</div>';
+const mesesAbertos = new Set();   // meses expandidos na lista de operações
 
-  el('listaOps').querySelectorAll('[data-lancar]').forEach(b=>b.onclick=()=>abrirLancar(b.dataset.lancar));
-  el('listaOps').querySelectorAll('[data-editar]').forEach(b=>b.onclick=()=>abrirEditarOp(b.dataset.editar));
-  el('listaOps').querySelectorAll('[data-desfazer]').forEach(b=>b.onclick=()=>{
+function renderOps(){
+  const box = el('listaOps');
+  if(!S.operacoes.length){ box.innerHTML = '<div class="empty">Nenhuma operação cadastrada.</div>'; return; }
+
+  // agrupa por mês, do mais recente para o mais antigo
+  const porMes = {};
+  S.operacoes.forEach(o=>{ (porMes[mesKey(o.data)] ||= []).push(o); });
+  const meses = Object.keys(porMes).sort().reverse();
+
+  // na primeira vez, deixa aberto só o mês do painel
+  if(!mesesAbertos.size) mesesAbertos.add(meses.includes(mesAtual()) ? mesAtual() : meses[0]);
+
+  const linha = o => {
+    const usados = S.lancamentos.filter(l=>l.operacaoId===o.id);
+    const custoTxt = o.modo==='sem' ? '—' : o.modo==='cpm' ? money(o.cpmCusto)+'/mil' : money(o.custoTotal);
+    // o investidor agora é por conta: mostra o resumo do que foi lançado
+    const cont = {};
+    usados.forEach(l=>{ cont[l.investidor||'—'] = (cont[l.investidor||'—']||0)+1; });
+    const inv = Object.entries(cont).map(([k,v])=>`${k} (${v})`).join(' · ') || '—';
+    return `<tr>
+      <td style="white-space:nowrap">${o.data.split('-').reverse().join('/')}</td>
+      <td><span class="op-ref">${esc(o.ref)}</span><span class="op-sub">${esc(o.tipo)}</span></td>
+      <td style="color:${ciaColor(o.cia)};font-weight:700">${esc(o.cia)}</td>
+      <td>${esc(o.fonte)}</td>
+      <td style="font-size:calc(12px * var(--escala));color:var(--muted)">${esc(inv)}</td>
+      <td style="text-align:right;white-space:nowrap">${money(o.cpmVenda)}</td>
+      <td style="white-space:nowrap">${custoTxt}</td>
+      <td><span class="badge ${o.status==='lancada'?'ok':'open'}">${o.status==='lancada'?'Lançada':'Aberta'}</span>
+          ${usados.length?`<span class="op-sub">${usados.length} conta${usados.length>1?'s':''}</span>`:''}</td>
+      <td><div class="acoes">
+        <button class="btn alt acao-min" data-editar="${o.id}" title="Editar os dados da operação">
+          <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Editar</button>
+        <button class="btn alt acao-min" data-lancar="${o.id}">${usados.length?'Relançar':'Lançar'} »</button>
+        ${usados.length?`<button class="btn alt acao-min acao-ico" data-desfazer="${o.id}" title="Desfazer lançamento nas contas" aria-label="Desfazer lançamento">
+          <svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg></button>`:''}
+      </div></td></tr>`;
+  };
+
+  box.innerHTML = meses.map(m=>{
+    const ops = porMes[m].slice().sort((a,b)=> a.data<b.data?1:-1);
+    const lancadas = ops.filter(o=>o.status==='lancada').length;
+    return `<div class="acordeao ${mesesAbertos.has(m)?'aberto':''}">
+      <button type="button" data-mes="${m}">
+        <svg class="seta" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+        <span class="nome">${esc(mesLabel(m))}</span>
+        <span class="chip">${ops.length} promoç${ops.length>1?'ões':'ão'}</span>
+        ${lancadas ? `<span class="badge ok">${lancadas} lançada${lancadas>1?'s':''}</span>` : ''}
+      </button>
+      <div class="corpo" style="padding-top:12px">
+        <div style="overflow-x:auto"><table class="list">
+          <thead><tr><th>Data</th><th>Promoção</th><th>CIA</th><th>Fornecedor</th><th>Investidor</th><th style="text-align:right">CPM venda</th><th>Custo</th><th>Status</th><th></th></tr></thead>
+          <tbody>${ops.map(linha).join('')}</tbody>
+        </table></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  box.querySelectorAll('[data-mes]').forEach(b=>b.onclick=()=>{
+    const m = b.dataset.mes;
+    mesesAbertos.has(m) ? mesesAbertos.delete(m) : mesesAbertos.add(m);
+    b.closest('.acordeao').classList.toggle('aberto', mesesAbertos.has(m));
+  });
+  box.querySelectorAll('[data-lancar]').forEach(b=>b.onclick=()=>abrirLancar(b.dataset.lancar));
+  box.querySelectorAll('[data-editar]').forEach(b=>b.onclick=()=>abrirEditarOp(b.dataset.editar));
+  box.querySelectorAll('[data-desfazer]').forEach(b=>b.onclick=()=>{
     const id=b.dataset.desfazer;
     if(fechado(mesAtual())){ alert('Mês fechado. Reabra em Ajustes para alterar.'); return; }
     if(!confirm('Remover os lançamentos desta operação?')) return;
@@ -1678,7 +1760,7 @@ function renderMulti(prefixo, campo, estado){
 document.addEventListener('click', e=>{
   const b = e.target.closest('.mini-add'); if(!b) return;
   const tipo = b.dataset.novo;
-  const rotulos = {tipo:'tipo de operação', investidor:'investidor'};
+  const rotulos = {tipo:'tipo de operação'};
   const nome = (prompt('Nome do novo ' + rotulos[tipo] + ':') || '').trim();
   if(!nome) return;
 
@@ -1687,9 +1769,6 @@ document.addEventListener('click', e=>{
     selOp.tipos.push({nome, detalhe:'', valor:null});
     save(); renderMulti('op','tipos',selOp);
   } else {
-    if(!S.investidoresOp.includes(nome)) S.investidoresOp.push(nome);
-    selOp.investidores.push({nome, detalhe:'', valor:null});
-    save(); renderMulti('op','investidores',selOp);
   }
   renderCadastros();
 });
@@ -1705,16 +1784,15 @@ el('btnSalvarOp').onclick = ()=>{
   const modo = el('opModo').value;
   S.operacoes.push({
     id:uid(), ref, data, cia:el('opCia').value, fonte:el('opFonte').value,
-    tipos: selOp.tipos.map(x=>({...x})), investidores: selOp.investidores.map(x=>({...x})),
-    tipo: nomesDe(selOp.tipos), investidor: nomesDe(selOp.investidores),
+    tipos: selOp.tipos.map(x=>({...x})), tipo: nomesDe(selOp.tipos),
     cpmVenda:parseFloat(el('opCpmVenda').value)||0, modo,
     custoTotal: modo==='total' ? (parseFloat(el('opCustoTotal').value)||0) : null,
     cpmCusto:   modo==='cpm'   ? (parseFloat(el('opCpmCusto').value)||0)   : null,
     status:'aberta'
   });
   el('opRef').value=''; el('opCustoTotal').value=''; el('opCpmCusto').value='';
-  selOp.tipos=[]; selOp.investidores=[];
-  renderMulti('op','tipos',selOp); renderMulti('op','investidores',selOp);
+  selOp.tipos=[];
+  renderMulti('op','tipos',selOp);
   save(); refreshAll();
   alert('Operação cadastrada. Use "Lançar »" para escolher as contas participantes.');
 };
@@ -1733,8 +1811,7 @@ function abrirEditarOp(id){
   el('edData').value=o.data; el('edRef').value=o.ref; el('edCia').value=o.cia;
   el('edFonte').value=o.fonte;
   selEd.tipos = (o.tipos||[]).map(x=>({...x}));
-  selEd.investidores = (o.investidores||[]).map(x=>({...x}));
-  renderMulti('ed','tipos',selEd); renderMulti('ed','investidores',selEd);
+  renderMulti('ed','tipos',selEd);
   el('edCpmVenda').value=o.cpmVenda;
   el('edModo').value=o.modo; el('edModo').onchange();
   el('edCustoTotal').value = o.custoTotal ?? '';
@@ -1752,8 +1829,7 @@ el('salvarOpEdit').onclick = ()=>{
   Object.assign(o, {
     data: el('edData').value, ref: el('edRef').value.trim(), cia: el('edCia').value,
     fonte: el('edFonte').value,
-    tipos: selEd.tipos.map(x=>({...x})), investidores: selEd.investidores.map(x=>({...x})),
-    tipo: nomesDe(selEd.tipos), investidor: nomesDe(selEd.investidores),
+    tipos: selEd.tipos.map(x=>({...x})), tipo: nomesDe(selEd.tipos),
     cpmVenda: parseFloat(el('edCpmVenda').value)||0, modo,
     custoTotal: modo==='total' ? (parseFloat(el('edCustoTotal').value)||0) : null,
     cpmCusto:   modo==='cpm'   ? (parseFloat(el('edCpmCusto').value)||0)   : null
@@ -1780,6 +1856,7 @@ function recalcularOperacao(o){
                  : (totalMilhas ? o.custoTotal/(totalMilhas/1000) : 0);
   ls.forEach(l=>{
     l.data=o.data; l.cia=o.cia; l.fonte=o.fonte; l.opRef=o.ref; l.opTipo=o.tipo;
+    if(!l.investidor) l.investidor = INVESTIDORES[0];
     l.cpmVenda=o.cpmVenda; l.cpmCusto=cpmCusto;
     l.valor = l.milhas/1000*o.cpmVenda;
     l.custo = l.milhas/1000*cpmCusto;
@@ -1806,26 +1883,32 @@ function abrirLancar(id){
   `<span class="gold">${opAtual.status==='lancada'?'Lançada':'Aberta'}</span>`;
 
   el('contasPart').innerHTML = `<div style="overflow-x:auto"><table class="list">
-    <thead><tr><th></th><th>Conta</th><th>Parceiro</th><th>CPF</th><th style="text-align:right">Milhas da promo</th></tr></thead>
+    <thead><tr><th></th><th>Conta</th><th>Parceiro</th><th>Investidor</th><th style="text-align:right">Milhas da promo</th></tr></thead>
     <tbody>${S.contas.map(c=>{
       const j = jaLancado.find(l=>l.contaId===c.id);
       return `<tr>
         <td style="width:30px"><input type="checkbox" data-part="${c.id}" ${j?'checked':''} style="width:17px;height:17px;accent-color:var(--navy)"></td>
         <td style="font-weight:600;white-space:nowrap">${esc(c.nome)}</td>
         <td style="color:var(--muted)">${esc(respNome(c.respId))}</td>
-        <td style="font-family:ui-monospace,monospace;font-size:12px;color:var(--muted)">${esc(c.cpf||'—')}</td>
+        <td><select data-inv="${c.id}" style="min-width:140px">${opcoesInvestidor(j ? j.investidor : INVESTIDORES[0])}</select></td>
         <td style="text-align:right"><input type="number" data-milhas="${c.id}" value="${j? j.milhas : (c.milhasPadrao||0)}" style="width:110px;text-align:right"></td>
       </tr>`;
     }).join('')}</tbody></table></div>`;
 
   el('contasPart').querySelectorAll('input').forEach(i=>{ i.oninput = calcLancar; i.onchange = calcLancar; });
+  // trocar o investidor de uma conta já lançada salva na hora
+  el('contasPart').querySelectorAll('[data-inv]').forEach(s=>s.onchange=()=>{
+    const l = S.lancamentos.find(x=>x.operacaoId===opAtual.id && x.contaId===s.dataset.inv);
+    if(l){ l.investidor = s.value; save(); renderOps(); renderLancamentos(); }
+  });
   calcLancar();
   el('boxLancar').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function selecionadas(){
   return [...el('contasPart').querySelectorAll('[data-part]:checked')].map(i=>({
     contaId: i.dataset.part,
-    milhas: parseFloat(el('contasPart').querySelector(`[data-milhas="${i.dataset.part}"]`).value)||0
+    milhas: parseFloat(el('contasPart').querySelector(`[data-milhas="${i.dataset.part}"]`).value)||0,
+    investidor: (el('contasPart').querySelector(`[data-inv="${i.dataset.part}"]`)||{}).value || INVESTIDORES[0]
   })).filter(x=>x.milhas>0);
 }
 function calcLancar(){
@@ -1863,6 +1946,7 @@ el('btnLancarOp').onclick = ()=>{
     const valor = s.milhas/1000*opAtual.cpmVenda, custo = s.milhas/1000*cpmCusto;
     S.lancamentos.push({id:uid(),operacaoId:opAtual.id,opRef:opAtual.ref,opTipo:opAtual.tipo,
       contaId:s.contaId,data:opAtual.data,cia:opAtual.cia,fonte:opAtual.fonte,
+      investidor:s.investidor,
       milhas:s.milhas,cpmVenda:opAtual.cpmVenda,cpmCusto,valor,custo,resultado:valor-custo,obs:''});
   });
   opAtual.status='lancada';
@@ -1904,7 +1988,7 @@ function renderLancamentos(){
       <div class="push"></div>
     </div>
     <div style="overflow-x:auto"><table class="list">
-      <thead><tr><th>Data</th><th>Conta</th><th>Parceiro</th><th>Operação</th><th>CIA</th>
+      <thead><tr><th>Data</th><th>Conta</th><th>Parceiro</th><th>Operação</th><th>CIA</th><th>Investidor</th>
         <th class="n" style="text-align:right">Milhas</th><th style="text-align:right">Valor</th>
         <th style="text-align:right">Custo</th><th style="text-align:right">Resultado</th></tr></thead>
       <tbody>${ls.map(l=>{
@@ -1915,11 +1999,18 @@ function renderLancamentos(){
           <td style="color:var(--muted)">${esc(c?respNome(c.respId):'—')}</td>
           <td><span style="font-weight:600">${esc(o?o.ref:'—')}</span><span class="op-sub">${esc(l.fonte)}</span></td>
           <td style="color:${ciaColor(l.cia)};font-weight:700">${esc(l.cia)}</td>
+          <td><select data-linv="${l.id}" style="min-width:135px">${opcoesInvestidor(l.investidor)}</select></td>
           <td style="text-align:right;font-variant-numeric:tabular-nums">${num(l.milhas)}</td>
           <td style="text-align:right;font-variant-numeric:tabular-nums">${money(l.valor)}</td>
           <td style="text-align:right;color:#B4232A;font-variant-numeric:tabular-nums">${l.custo?money(l.custo):'—'}</td>
           <td style="text-align:right" class="money">${money(l.resultado)}</td></tr>`;
       }).join('')}</tbody></table></div>`;
+
+  // o investidor pode ser trocado a qualquer momento, conta a conta
+  box.querySelectorAll('[data-linv]').forEach(s=>s.onchange=()=>{
+    const l = S.lancamentos.find(x=>x.id===s.dataset.linv);
+    if(l){ l.investidor = s.value; save(); renderOps(); }
+  });
 }
 
 /* =========================================================
@@ -2101,7 +2192,7 @@ function renderExtrato(){
           <td><span style="font-weight:600">${esc(o?o.tipo:'—')}</span><span class="op-sub">${esc(o?o.ref:'')}</span></td>
           <td style="text-align:right;font-variant-numeric:tabular-nums">${num(l.milhas)}</td>
           <td style="text-align:right;font-variant-numeric:tabular-nums">${(l.cpmVenda||0).toFixed(2).replace('.',',')}</td>
-          <td style="font-size:12px;color:var(--muted)">${esc(o?o.investidor:'—')}</td>
+          <td style="font-size:calc(12px * var(--escala));color:var(--muted)">${esc(l.investidor||'—')}</td>
           <td style="font-size:12px;color:var(--muted)">${esc(l.fonte)}</td>
           <td style="text-align:right;font-variant-numeric:tabular-nums">${money(l.valor)}</td>
           <td style="text-align:right;color:#B4232A;font-variant-numeric:tabular-nums">${l.custo?money(l.custo):'—'}</td>
@@ -2109,6 +2200,117 @@ function renderExtrato(){
         :'<div class="empty">Sem lançamentos neste mês.</div>'}
     </div>`;
 }
+
+
+
+/* =========================================================
+   Clube de pontos
+   Mensalidade lançada direto nas contas. Não vira operação,
+   então não aparece na lista de operações cadastradas.
+   ========================================================= */
+const PROGRAMAS_CLUBE = ['LATAM','SMILES','AZUL','Outros'];
+let progClube = 'SMILES';
+
+function corDoPrograma(nome){
+  const j = {SMILES:'#F0821E', AZUL:'#0B4EA2', LATAM:'#E8114B'};
+  return j[nome.toUpperCase()] || '#12304C';
+}
+
+/* garante que o programa e a fonte existam nos cadastros,
+   senão o relatório perderia a cor e o agrupamento */
+function garantirCadastros(cia){
+  if(!S.cias.some(c=>c.nome.toUpperCase()===cia.toUpperCase()))
+    S.cias.push({nome:cia, cor:corDoPrograma(cia)});
+  if(!S.fontes.includes('CLUBE')) S.fontes.push('CLUBE');
+}
+
+function renderInvestidorClube(){
+  const s = el('clInvestidor'); if(!s) return;
+  const atual = s.value;
+  s.innerHTML = opcoesInvestidor(atual || INVESTIDORES[0]);
+}
+
+function renderProgramasClube(){
+  const box = el('clProgramas'); if(!box) return;
+  box.innerHTML = PROGRAMAS_CLUBE.map(p=>
+    `<label><input type="radio" name="progclube" value="${esc(p)}" ${p===progClube?'checked':''}>${esc(p)}</label>`).join('');
+  box.querySelectorAll('input').forEach(i=>i.onchange=()=>{
+    progClube = i.value;
+    el('wrapClOutro').hidden = progClube !== 'Outros';
+    if(progClube === 'Outros') el('clOutro').focus();
+  });
+  el('wrapClOutro').hidden = progClube !== 'Outros';
+}
+
+function nomeDoClube(){
+  return progClube === 'Outros' ? el('clOutro').value.trim().toUpperCase() : progClube;
+}
+
+function renderContasClube(){
+  const box = el('clContas'); if(!box) return;
+  box.innerHTML = S.contas.length ? `<div style="overflow-x:auto"><table class="list">
+    <thead><tr><th></th><th>Conta</th><th>Parceiro</th><th style="text-align:right">Clubes no mês</th></tr></thead>
+    <tbody>${S.contas.map(c=>{
+      const n = S.lancamentos.filter(l=>l.contaId===c.id && ehClube(l) && mesKey(l.data)===mesAtual()).length;
+      return `<tr>
+        <td style="width:30px"><input type="checkbox" data-cl="${c.id}" style="width:17px;height:17px;accent-color:var(--navy)"></td>
+        <td style="font-weight:600;white-space:nowrap">${esc(c.nome)}</td>
+        <td style="color:var(--muted)">${esc(respNome(c.respId))}</td>
+        <td style="text-align:right;color:var(--muted)">${n || '—'}</td>
+      </tr>`;
+    }).join('')}</tbody></table></div>` : '<div class="empty">Cadastre uma conta primeiro.</div>';
+  box.querySelectorAll('input').forEach(i=>i.onchange=totaisClube);
+  totaisClube();
+}
+
+const marcadasClube = () => [...el('clContas').querySelectorAll('[data-cl]:checked')].map(i=>i.dataset.cl);
+
+function totaisClube(){
+  const box = el('clTotais'); if(!box) return;
+  const n = marcadasClube().length;
+  const valor  = parseFloat(el('clValor').value)  || 0;
+  const pontos = parseFloat(el('clPontos').value) || 0;
+  box.innerHTML = `
+    <div><span>Contas</span><b>${n}</b></div>
+    <div><span>Pontos no total</span><b>${num(pontos*n)}</b></div>
+    <div><span>Valor total</span><b class="r">${money(valor*n)}</b></div>
+    <div class="push"></div>`;
+}
+
+const ehClube = l => l.opTipo === 'Clube' && !l.operacaoId;
+
+el('btnLancarClube').onclick = ()=>{
+  const cia = nomeDoClube();
+  if(!cia){ alert('Informe o nome do programa.'); return; }
+  const contas = marcadasClube();
+  if(!contas.length){ alert('Marque ao menos uma conta.'); return; }
+  const data = el('clData').value;
+  if(!data){ alert('Informe a data.'); return; }
+  if(fechado(mesKey(data))){ alert('O mês desta data está fechado. Reabra em Ajustes.'); return; }
+
+  const valor  = parseFloat(el('clValor').value)  || 0;
+  const pontos = parseFloat(el('clPontos').value) || 0;
+  if(pontos <= 0 && valor <= 0){ alert('Informe o valor do clube ou os pontos recebidos.'); return; }
+
+  garantirCadastros(cia);
+  const investidor = el('clInvestidor').value || INVESTIDORES[0];
+  contas.forEach(contaId=>{
+    S.lancamentos.push({
+      id:uid(), operacaoId:'', opRef:'Clube ' + cia, opTipo:'Clube',
+      contaId, data, cia, fonte:'CLUBE', investidor,
+      milhas:pontos, cpmVenda:0, cpmCusto:0,
+      valor:valor, custo:0, resultado:valor, obs:'clube'
+    });
+  });
+  save();
+  el('mesRef').value = mesKey(data);
+  refreshAll();
+  alert(contas.length + ' clube(s) lançado(s).');
+};
+
+el('clTodas').onclick   = ()=>{ el('clContas').querySelectorAll('[data-cl]').forEach(i=>i.checked=true);  totaisClube(); };
+el('clNenhuma').onclick = ()=>{ el('clContas').querySelectorAll('[data-cl]').forEach(i=>i.checked=false); totaisClube(); };
+['clValor','clPontos'].forEach(id=>el(id).oninput = totaisClube);
 
 
 /* =========================================================
@@ -2727,7 +2929,7 @@ function preencherSelects(){
   el('iaConta').innerHTML    = optContas;
   el('opCia').innerHTML = optCias;   el('edCia').innerHTML = optCias;
   el('opFonte').innerHTML = optFontes; el('edFonte').innerHTML = optFontes;
-  renderMulti('op','tipos',selOp); renderMulti('op','investidores',selOp);
+  renderMulti('op','tipos',selOp);
   el('novaContaResp').innerHTML = '<option value="">Sem parceiro</option>'+optResps;
   Object.entries(keep).forEach(([id,v])=>{ if(v && [...el(id).options].some(o=>o.value===v)) el(id).value=v; });
 }
@@ -2787,7 +2989,8 @@ function refreshAll(){
   }
 
   renderFiltroContas(); contarFiltros();
-  renderOps(); renderLancamentos(); renderFinanceiro();
+  renderOps(); renderProgramasClube(); renderInvestidorClube(); renderContasClube();
+  renderLancamentos(); renderFinanceiro();
   renderExtrato(); renderCadastros(); renderAcessos(); renderFechar(); renderStatusNuvem(); renderTagModo(); renderAparencia(); renderChaveIA();
 }
 
@@ -2804,6 +3007,7 @@ window.__aplicarEstadoRemoto = function(estado, papel, rid){
   const meses=[...new Set(S.lancamentos.map(l=>mesKey(l.data)))].sort();
   const ini = meses.length?meses[meses.length-1]:new Date().toISOString().slice(0,7);
   el('mesRef').value=ini; el('lancMes').value=ini; el('opData').value=ini+'-15';
+  el('clData').value = new Date().toISOString().slice(0,10);
   el('cfgTitulo').value=S.cfg.titulo||'Fechamento Mensal';
   el('cfgTopN').value=S.cfg.topN||3;
   el('loginParceiro').hidden = true;
@@ -2954,6 +3158,7 @@ window.__erroAcesso = function(e, etapa, email, uid){
   const ini = meses.length?meses[meses.length-1]:new Date().toISOString().slice(0,7);
   el('mesRef').value=ini; el('lancMes').value=ini;
   el('opData').value = ini+'-15';
+  el('clData').value = new Date().toISOString().slice(0,10);
   el('cfgTitulo').value=S.cfg.titulo||'Fechamento Mensal';
   el('cfgTopN').value=S.cfg.topN||3;
   refreshAll();
@@ -3096,6 +3301,7 @@ if (window.MP_USA_FIREBASE) {
       out[chave('lancamentos', l.id)] = {
         operacaoId: l.operacaoId || '', opRef: l.opRef || '', opTipo: l.opTipo || '',
         contaId: l.contaId, contaNome: conta.nome || '', respId: conta.respId || '',
+        investidor: l.investidor || 'MILHAS PLUS',
         respEmail: emailDe(conta.respId), data: l.data, cia: l.cia, fonte: l.fonte,
         milhas: l.milhas || 0, cpmVenda: l.cpmVenda || 0,
         valor: l.valor || 0, resultado: l.resultado || 0
