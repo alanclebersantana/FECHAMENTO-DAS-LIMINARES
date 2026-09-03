@@ -33,7 +33,7 @@
   // Chave da API do Google Gemini, usada na leitura de extrato.
   // Fica gravada aqui, no próprio app: vale para todos os aparelhos,
   // sem precisar cadastrar em cada um. Gere em aistudio.google.com/apikey
-  window.MP_GEMINI = "AQ.Ab8RN6I66HHoqUMC2L23FDuS_FNZSdmv9vt3GIbYyHWZlDctbw";
+  window.MP_GEMINI = "";
 </script>
 
 <style>
@@ -455,6 +455,14 @@ html[data-tema="escuro"] .aviso-topo{color:#E9C46A}
 .topbar .brand i{font-style:normal;font-size:calc(10.5px * var(--escala));font-weight:600;
   letter-spacing:.08em;color:rgba(255,255,255,.6);margin-top:2px}
 
+/* rótulo da conta logada no cabeçalho */
+.tag-conta{
+  font-size:calc(12px * var(--escala));font-weight:600;margin-right:8px;
+  max-width:34vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  color:rgba(255,255,255,.85);
+}
+@media (max-width:520px){ .tag-conta{max-width:38vw;font-size:calc(11px * var(--escala))} }
+
 /* ---- aparência ---- */
 .paletas{display:flex;flex-wrap:wrap;gap:9px}
 .paleta{
@@ -594,7 +602,7 @@ body.parceiro .subnav{display:none}
     <i>controle de liminares</i>
   </div>
   <div class="spacer"></div>
-  <span id="tagParceiro" hidden style="font-size:12px;font-weight:700;margin-right:8px"></span>
+  <span id="tagParceiro" class="tag-conta" hidden></span>
   <button class="ghost" id="btnSair" hidden>Sair</button>
   <span id="tagModo" class="no-admin tag-modo" hidden></span>
 </div>
@@ -2589,8 +2597,18 @@ function renderStatusNuvem(){
       ${estadoSync.erro ? `<div class="lockbar" style="margin-top:10px">
         <b>O banco recusou a gravação:</b> <code>${esc(estadoSync.erro)}</code>.
         Confira se as regras do <code>firestore.rules</code> estão publicadas e se a sua conta está em <code>admins</code>.</div>` : ''}
-      <div class="toolbar" style="margin:12px 0 0"><button class="btn alt acao-min" id="btnSalvarAgora">Salvar agora</button></div>`;
+      <div class="toolbar" style="margin:12px 0 0">
+        <button class="btn alt acao-min" id="btnSalvarAgora">Salvar agora</button>
+        <button class="btn alt acao-min" id="btnTrocarConta2">Sair e entrar com outra conta</button>
+      </div>`;
     const b = el('btnSalvarAgora'); if(b) b.onclick = enviarAgora;
+    const t = el('btnTrocarConta2');
+    if(t) t.onclick = ()=>{
+      if(estadoSync.situacao==='pendente' || estadoSync.situacao==='enviando'){
+        if(!confirm('Ainda há alterações sendo salvas. Sair mesmo assim?')) return;
+      }
+      if(window.__trocarConta) window.__trocarConta();
+    };
   }else{
     box.innerHTML = `<div class="nuvem"><i class="off"></i> Somente neste aparelho</div>
       <p class="hint" style="margin:8px 0 0">O Firebase ainda não foi configurado no arquivo <b>index.html</b>. Os dados ficam só neste navegador — faça backup antes de trocar de aparelho.</p>`;
@@ -2775,6 +2793,12 @@ function refreshAll(){
 
 /* Chamado pelo módulo do Firebase depois do login.
    papel: 'admin' | 'parceiro' ; rid: id do parceiro quando for o caso. */
+window.__mostrarSessao = function(rotulo){
+  el('tagParceiro').hidden = false;
+  el('tagParceiro').textContent = rotulo;
+  el('btnSair').hidden = false;
+};
+
 window.__aplicarEstadoRemoto = function(estado, papel, rid){
   S = estado; migrar();
   const meses=[...new Set(S.lancamentos.map(l=>mesKey(l.data)))].sort();
@@ -2785,7 +2809,12 @@ window.__aplicarEstadoRemoto = function(estado, papel, rid){
   el('loginParceiro').hidden = true;
   aplicarAparencia();
   if(papel==='parceiro'){ entrarComoParceiro(rid); }
-  else { document.body.classList.remove('parceiro'); refreshAll(); }
+  else {
+    document.body.classList.remove('parceiro');
+    // o administrador também precisa poder trocar de conta
+    window.__mostrarSessao((window.MPSync && MPSync.usuario) || 'Administrador');
+    refreshAll();
+  }
 };
 /* Quando o Firebase desloga, o listener dispara de novo sem usuário.
    Se já houver um diagnóstico na tela, ele não pode ser apagado —
@@ -3183,6 +3212,7 @@ if (window.MP_USA_FIREBASE) {
     }
   };
   document.getElementById('btnSair').onclick = async () => {
+    if (!confirm('Sair da conta?')) return;
     sessionStorage.clear();
     await signOut(auth);
     location.hash = '';
@@ -3204,6 +3234,7 @@ if (window.MP_USA_FIREBASE) {
         window.MPSync.pronto = true;
         window.MPSync.usuario = email;
         window.__aplicarEstadoRemoto(estado, 'admin');
+        window.__mostrarSessao(email);
 
         // Esta conta é administradora. Se ela também estiver cadastrada
         // como parceiro, ou se veio por um link de convite, o app entra
