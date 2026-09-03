@@ -30,6 +30,9 @@
   };
   window.MP_USA_FIREBASE = !!window.MP_FIREBASE.apiKey;
 
+  // carimbo da publicação — aparece em Mais → Ajustes → Versão do app
+  window.MP_VERSAO = "2026.09.03-1912";
+
   // Chave da API do Google Gemini, usada na leitura de extrato.
   // Fica gravada aqui, no próprio app: vale para todos os aparelhos,
   // sem precisar cadastrar em cada um. Gere em aistudio.google.com/apikey
@@ -954,6 +957,15 @@ body.parceiro .subnav{display:none}
         <p class="hint" style="margin:12px 0 0">O relatório continua claro em qualquer tema, porque é o que vai para o PDF e para a imagem enviada ao cliente.</p>
       </div>
 
+      <div class="box">
+        <h3>Versão do app</h3>
+        <div id="statusVersao"></div>
+        <div class="toolbar" style="margin:12px 0 0">
+          <button class="btn alt acao-min" id="btnForcarAtualizar">Forçar atualização</button>
+        </div>
+        <p class="hint" style="margin:10px 0 0">Use se você publicou uma versão nova e a tela continuar
+          igual: isso apaga o app guardado no navegador e recarrega do servidor.</p>
+      </div>
       <div class="box">
         <h3>Armazenamento</h3>
         <div id="statusNuvem"></div>
@@ -2781,6 +2793,28 @@ function renderAvisoChaveIA(){
     : `<div class="nuvem"><i class="off"></i> Sem chave: a leitura de extrato fica indisponível</div>`;
 }
 
+function renderStatusVersao(){
+  const box = el('statusVersao'); if(!box) return;
+  box.innerHTML = `<div class="nuvem"><i class="on"></i> Versão <b>${esc(window.MP_VERSAO || '—')}</b></div>`;
+}
+
+/* Apaga o app guardado no navegador e recarrega do servidor.
+   É o que resolve quando a tela nova não aparece depois de publicar. */
+async function forcarAtualizacao(){
+  if(!confirm('Recarregar o app do servidor? Seus dados na nuvem não são afetados.')) return;
+  try{
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r=>r.unregister()));
+    }
+    if(window.caches){
+      const nomes = await caches.keys();
+      await Promise.all(nomes.map(n=>caches.delete(n)));
+    }
+  }catch(e){ console.warn(e); }
+  location.replace(location.pathname + '?v=' + Date.now());
+}
+
 function renderStatusNuvem(){
   const box = el('statusNuvem'); if(!box) return;
   if(window.MP_USA_FIREBASE){
@@ -2991,7 +3025,8 @@ function refreshAll(){
   renderFiltroContas(); contarFiltros();
   renderOps(); renderProgramasClube(); renderInvestidorClube(); renderContasClube();
   renderLancamentos(); renderFinanceiro();
-  renderExtrato(); renderCadastros(); renderAcessos(); renderFechar(); renderStatusNuvem(); renderTagModo(); renderAparencia(); renderChaveIA();
+  renderExtrato(); renderCadastros(); renderAcessos(); renderFechar(); renderStatusNuvem(); renderStatusVersao(); renderTagModo(); renderAparencia(); renderChaveIA();
+  const bf = el('btnForcarAtualizar'); if(bf) bf.onclick = forcarAtualizacao;
 }
 
 /* Chamado pelo módulo do Firebase depois do login.
