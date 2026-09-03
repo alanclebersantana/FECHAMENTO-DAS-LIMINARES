@@ -33,7 +33,7 @@
   // Chave da API do Google Gemini, usada na leitura de extrato.
   // Fica gravada aqui, no próprio app: vale para todos os aparelhos,
   // sem precisar cadastrar em cada um. Gere em aistudio.google.com/apikey
-  window.MP_GEMINI = "AQ.Ab8RN6I66HHoqUMC2L23FDuS_FNZSdmv9vt3GIbYyHWZlDctbw";
+  window.MP_GEMINI = "";
 </script>
 
 <style>
@@ -2902,7 +2902,7 @@ window.__semAcesso = function(email, uid){
   el('avisoLogin').textContent = 'A conta ' + email + ' ainda não tem acesso.';
   el('diag').hidden = false;
   el('diag').innerHTML = `
-    <h4>Se você é o administrador</h4>
+    <h4>Se você é o administrador:</h4>
     ${blocoUid(uid)}
     <h4>Se você é parceiro</h4>
     <p>Peça ao administrador o link de convite, ou que ele cadastre este e-mail em Cadastros → Parceiros.</p>
