@@ -29,6 +29,11 @@
     appId: "1:47504771278:web:7bda8575c97fa37f4c689f"
   };
   window.MP_USA_FIREBASE = !!window.MP_FIREBASE.apiKey;
+
+  // Chave da API do Google Gemini, usada na leitura de extrato.
+  // Fica gravada aqui, no próprio app: vale para todos os aparelhos,
+  // sem precisar cadastrar em cada um. Gere em aistudio.google.com/apikey
+  window.MP_GEMINI = "";
 </script>
 
 <style>
@@ -501,6 +506,13 @@ input[type=range]{width:100%;accent-color:var(--navy-txt)}
 .loginbox p{font-size:calc(13.5px * var(--escala));color:var(--muted);margin:6px 0 16px}
 .loginbox input{text-align:center;font-size:calc(20px * var(--escala));font-weight:800;letter-spacing:.22em;text-transform:uppercase;padding:13px}
 .loginbox .erro{color:#B4232A;font-weight:600;margin:12px 0 0;text-align:center;font-size:calc(13px * var(--escala))}
+.campos-login{display:grid;gap:9px}
+.campos-login input{text-align:left;font-size:calc(15px * var(--escala));font-weight:400;letter-spacing:normal;text-transform:none;padding:11px}
+.links-login{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.links-login button{background:none;border:0;color:var(--navy-txt);font-weight:700;cursor:pointer;
+  font-size:calc(12.5px * var(--escala));text-decoration:underline;padding:2px 0}
+.ou{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted);font-size:calc(12px * var(--escala))}
+.ou::before,.ou::after{content:'';flex:1;height:1px;background:var(--line)}
 .btn.google{width:100%;justify-content:center;background:var(--card);color:var(--ink);border:1px solid var(--line);font-weight:600}
 .btn.google:hover{background:var(--sutil)}
 .rodape-login{font-size:calc(12px * var(--escala));color:var(--muted);text-align:center;margin:14px 0 0}
@@ -594,11 +606,24 @@ body.parceiro .subnav{display:none}
     <p id="subLogin">Entre com a conta Google cadastrada.</p>
 
     <div id="areaGoogle" hidden>
+      <div class="campos-login">
+        <input type="email" id="loginEmail" placeholder="seu@email.com" autocomplete="username" spellcheck="false">
+        <input type="password" id="loginSenha" placeholder="senha" autocomplete="current-password">
+        <button class="btn" id="btnEntrarEmail" style="width:100%;justify-content:center">Entrar</button>
+        <div class="links-login">
+          <button type="button" id="btnCriarConta">Criar conta com este e-mail</button>
+          <button type="button" id="btnEsqueciSenha">Esqueci a senha</button>
+        </div>
+      </div>
+
+      <div class="ou"><span>ou</span></div>
+
       <button class="btn google" id="btnGoogle">
         <svg viewBox="0 0 24 24" width="18" height="18"><path fill="#4285F4" d="M23 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.2a5.3 5.3 0 0 1-2.3 3.5v2.9h3.7c2.2-2 3.4-5 3.4-8.6z"/><path fill="#34A853" d="M12 24c3.1 0 5.7-1 7.6-2.8l-3.7-2.9c-1 .7-2.3 1.1-3.9 1.1-3 0-5.5-2-6.4-4.7H1.8v3C3.7 21.4 7.6 24 12 24z"/><path fill="#FBBC05" d="M5.6 14.7a7.2 7.2 0 0 1 0-4.6v-3H1.8a12 12 0 0 0 0 10.6l3.8-3z"/><path fill="#EA4335" d="M12 4.8c1.7 0 3.2.6 4.4 1.7l3.3-3.3C17.7 1.2 15.1 0 12 0 7.6 0 3.7 2.6 1.8 6.1l3.8 3C6.5 6.7 9 4.8 12 4.8z"/></svg>
         Entrar com Google
       </button>
-      <p class="rodape-login">Parceiro: use a conta de e-mail informada ao administrador.</p>
+      <p class="rodape-login">Use o e-mail que o administrador cadastrou para você. Na primeira vez,
+        crie a senha em “Criar conta com este e-mail”.</p>
     </div>
 
     <div id="areaCodigo">
@@ -860,18 +885,17 @@ body.parceiro .subnav{display:none}
       </div>
       <div class="box">
         <h3>Leitura de extrato por IA</h3>
-        <p class="hint">A leitura usa a API do Google Gemini. Gere uma chave em
-          <b>aistudio.google.com/apikey</b> e cole abaixo. Ela fica guardada só neste aparelho e não vai para a nuvem.</p>
+        <p class="hint">A leitura usa a API do Google Gemini. Grave a chave em
+          <code>window.MP_GEMINI</code>, no topo do <b>index.html</b> — assim vale para todos os aparelhos.
+          Se preferir cadastrar por aqui, o valor abaixo sobrepõe o do arquivo e também sincroniza.</p>
+        <div id="statusChaveIA" style="margin-bottom:12px"></div>
         <div class="field" style="max-width:460px">
           <label for="cfgChaveIA">Chave da API Gemini</label>
-          <input type="password" id="cfgChaveIA" placeholder="AIza..." autocomplete="off">
+          <input type="text" id="cfgChaveIA" placeholder="AIza..." autocomplete="off" spellcheck="false">
         </div>
         <div class="toolbar" style="margin:12px 0 0">
-          <button class="btn alt acao-min" id="btnVerChave">Mostrar</button>
-          <button class="btn danger acao-min" id="btnLimparChave">Apagar chave</button>
+          <button class="btn danger acao-min" id="btnLimparChave">Limpar campo</button>
         </div>
-        <div class="lockbar" style="margin-top:12px">Restrinja a chave no Google Cloud (por site e só para a
-          <b>Generative Language API</b>). Chave usada no navegador pode ser lida por quem abrir o código da página.</div>
       </div>
       <div class="box">
         <h3>Aparência</h3>
@@ -1108,6 +1132,7 @@ function migrar(){
   if(!S.cfg) S.cfg = {titulo:'Fechamento Mensal',topN:3};
   if(!S.cfg.aparencia) S.cfg.aparencia = {tema:'claro', escala:100, paleta:'1'};
   if(!S.filtro) S.filtro = {resp:'todos',cia:'todas',fonte:'todas',min:'',max:''};
+  if(typeof S.chaveIA !== 'string') S.chaveIA = '';
   S.responsaveis.forEach(r=>{ if(r.tel===undefined) r.tel=''; if(r.codigo===undefined) r.codigo=''; if(r.email===undefined) r.email=''; });
   S.lancamentos.forEach(l=>{ if(l.resultado===undefined) l.resultado = +l.valor||0; if(l.milhas===undefined) l.milhas=0; if(l.custo===undefined) l.custo=0; });
 }
@@ -1209,7 +1234,7 @@ function abrirLogin(erro){
   const nuvem = !!window.MP_USA_FIREBASE;
   el('areaGoogle').hidden = !nuvem;
   el('areaCodigo').hidden = nuvem;
-  if(nuvem){ el('tituloLogin').textContent='Acessar'; el('subLogin').textContent='Entre com a conta Google cadastrada.'; }
+  if(nuvem){ el('tituloLogin').textContent='Acessar'; el('subLogin').textContent='Entre com o e-mail cadastrado.'; }
   else { el('tituloLogin').textContent='Portal do parceiro'; el('subLogin').textContent='Digite o código de acesso que você recebeu.'; }
 })();
 function checarAcesso(){
@@ -2082,9 +2107,11 @@ function renderExtrato(){
    Leitura de extrato por IA (Google Gemini)
    A chave fica só no aparelho — nunca é enviada ao Firestore.
    ========================================================= */
-const CHAVE_IA = 'mp_chave_gemini';
-const chaveIA    = () => localStorage.getItem(CHAVE_IA) || '';
-const setChaveIA = v => v ? localStorage.setItem(CHAVE_IA, v) : localStorage.removeItem(CHAVE_IA);
+/* A chave vem do próprio app (constante no index.html) ou do campo
+   dos Ajustes, que sincroniza com a nuvem. Nos dois casos vale para
+   todos os aparelhos — nada fica preso a um navegador só. */
+const chaveIA = () => (S.chaveIA || window.MP_GEMINI || '').trim();
+function setChaveIA(v){ S.chaveIA = (v||'').trim(); save(); }
 
 let creditosLidos = [];
 
@@ -2519,25 +2546,29 @@ function renderTagModo(){
 
 function renderChaveIA(){
   const campo = el('cfgChaveIA'); if(!campo) return;
-  campo.value = chaveIA();
-  campo.onchange = ()=>{ setChaveIA(campo.value.trim()); renderAvisoChaveIA(); };
-  el('btnVerChave').onclick = ()=>{
-    const escondido = campo.type === 'password';
-    campo.type = escondido ? 'text' : 'password';
-    el('btnVerChave').textContent = escondido ? 'Ocultar' : 'Mostrar';
-  };
+  const noApp = !!(window.MP_GEMINI || '').trim();
+  campo.value = S.chaveIA || '';
+  campo.placeholder = noApp ? 'já gravada no index.html' : 'AIza...';
+  campo.onchange = ()=>{ setChaveIA(campo.value); renderAvisoChaveIA(); };
   el('btnLimparChave').onclick = ()=>{
-    if(!confirm('Apagar a chave guardada neste aparelho?')) return;
+    if(!confirm('Limpar a chave cadastrada aqui? A do index.html continua valendo.')) return;
     setChaveIA(''); campo.value=''; renderAvisoChaveIA();
   };
   renderAvisoChaveIA();
 }
 
 function renderAvisoChaveIA(){
-  const box = el('iaAvisoChave'); if(!box) return;
-  box.innerHTML = chaveIA() ? '' :
-    `<div class="lockbar" style="margin-top:12px">Falta cadastrar a chave da API Gemini em
-     <b>Mais → Ajustes → Leitura de extrato por IA</b>.</div>`;
+  const box = el('iaAvisoChave'); if(box){
+    box.innerHTML = chaveIA() ? '' :
+      `<div class="lockbar" style="margin-top:12px">Falta a chave da API Gemini. Grave em
+       <code>window.MP_GEMINI</code> no <b>index.html</b>, ou cadastre em
+       <b>Mais → Ajustes → Leitura de extrato por IA</b>.</div>`;
+  }
+  const st = el('statusChaveIA'); if(!st) return;
+  const noApp = !!(window.MP_GEMINI || '').trim();
+  st.innerHTML = chaveIA()
+    ? `<div class="nuvem"><i class="on"></i> Chave ativa — ${noApp && !S.chaveIA ? 'gravada no index.html' : 'gravada na nuvem, vale em todos os aparelhos'}</div>`
+    : `<div class="nuvem"><i class="off"></i> Sem chave: a leitura de extrato fica indisponível</div>`;
 }
 
 function renderStatusNuvem(){
@@ -2788,6 +2819,14 @@ window.__dominioNaoAutorizado = function(host){
   ligarCopiaUid(host); ligarAcoesDiag();
 };
 
+/* recado neutro na tela de acesso (não é erro) */
+window.__recadoLogin = function(msg){
+  el('loginParceiro').hidden = false;
+  el('avisoLogin').className = 'aguardando';
+  el('avisoLogin').hidden = false;
+  el('avisoLogin').textContent = msg;
+};
+
 window.__avisoTopo = function(html){
   el('avisoTopoTxt').innerHTML = html;
   el('avisoTopo').hidden = false;
@@ -2898,7 +2937,8 @@ window.__erroAcesso = function(e, etapa, email, uid){
 <script type="module">
 if (window.MP_USA_FIREBASE) {
   const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js');
-  const { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } =
+  const { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
+          signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } =
     await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js');
   const { getFirestore, collection, doc, getDoc, getDocs, setDoc, deleteDoc, query, where, writeBatch } =
     await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js');
@@ -2940,10 +2980,18 @@ if (window.MP_USA_FIREBASE) {
     return s.exists() ? s.data() : {};
   }
 
+  // guardada à parte: o parceiro lê config/geral, mas não isto
+  async function carregarPrivado() {
+    try {
+      const s = await getDoc(doc(db, 'config', 'privado'));
+      return s.exists() ? s.data() : {};
+    } catch (e) { return {}; }
+  }
+
   async function carregarComoAdmin() {
-    const [parceiros, contas, operacoes, lancamentos, custos, pagamentos, cfg] = await Promise.all([
+    const [parceiros, contas, operacoes, lancamentos, custos, pagamentos, cfg, priv] = await Promise.all([
       ler('parceiros'), ler('contas'), ler('operacoes'),
-      ler('lancamentos'), ler('custos'), ler('pagamentos'), carregarConfig()
+      ler('lancamentos'), ler('custos'), ler('pagamentos'), carregarConfig(), carregarPrivado()
     ]);
     const mapaCusto = Object.fromEntries(custos.map(c => [c.id, c]));
     return {
@@ -2956,6 +3004,7 @@ if (window.MP_USA_FIREBASE) {
       cias: cfg.cias || [], fontes: cfg.fontes || [],
       tiposOp: cfg.tiposOp || [], investidoresOp: cfg.investidoresOp || [],
       fechados: cfg.fechados || [],
+      chaveIA: priv.chaveIA || '',
       cfg: cfg.cfg || {titulo:'Fechamento Mensal', destaque:'auto', topN:3}
     };
   }
@@ -3041,6 +3090,7 @@ if (window.MP_USA_FIREBASE) {
       fechados:        [...(S.fechados || [])],
       cfg:             { ...(S.cfg || {}) }
     };
+    out[chave('config', 'privado')] = { chaveIA: S.chaveIA || '' };
     return clonar(out);
   }
 
@@ -3068,6 +3118,53 @@ if (window.MP_USA_FIREBASE) {
   window.__trocarConta = async () => { sessionStorage.clear(); await signOut(auth); location.reload(); };
 
   /* ---------------- login ---------------- */
+  /* ---- login por e-mail e senha (serve para qualquer provedor de e-mail) ---- */
+  const recado = {
+    'auth/invalid-email':                'E-mail inválido.',
+    'auth/missing-password':             'Digite a senha.',
+    'auth/weak-password':                'A senha precisa ter pelo menos 6 caracteres.',
+    'auth/email-already-in-use':         'Este e-mail já tem conta. Use "Entrar", ou "Esqueci a senha".',
+    'auth/invalid-credential':           'E-mail ou senha não conferem. Se ainda não tem senha, use "Criar conta".',
+    'auth/wrong-password':               'Senha incorreta.',
+    'auth/user-not-found':               'Não existe conta com este e-mail. Use "Criar conta com este e-mail".',
+    'auth/too-many-requests':            'Muitas tentativas. Espere alguns minutos.',
+    'auth/operation-not-allowed':        'O login por e-mail e senha não está ativado no Firebase (Authentication → Sign-in method).'
+  };
+  const traduzir = c => recado[c] || ('Não foi possível entrar: ' + c);
+
+  const campos = () => ({
+    email: (document.getElementById('loginEmail').value || '').trim(),
+    senha: document.getElementById('loginSenha').value || ''
+  });
+
+  document.getElementById('btnEntrarEmail').onclick = async () => {
+    const { email, senha } = campos();
+    if (!email) { window.__mostrarLogin('Digite o e-mail.'); return; }
+    try { await signInWithEmailAndPassword(auth, email, senha); }
+    catch (e) { window.__mostrarLogin(traduzir(e.code || e.message)); }
+  };
+
+  document.getElementById('btnCriarConta').onclick = async () => {
+    const { email, senha } = campos();
+    if (!email) { window.__mostrarLogin('Digite o e-mail.'); return; }
+    if (senha.length < 6) { window.__mostrarLogin('Escolha uma senha de pelo menos 6 caracteres.'); return; }
+    try { await createUserWithEmailAndPassword(auth, email, senha); }
+    catch (e) { window.__mostrarLogin(traduzir(e.code || e.message)); }
+  };
+
+  document.getElementById('btnEsqueciSenha').onclick = async () => {
+    const { email } = campos();
+    if (!email) { window.__mostrarLogin('Digite o e-mail para receber o link.'); return; }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      window.__recadoLogin('Enviamos um link de redefinição para ' + email + '. Confira a caixa de entrada e o spam.');
+    } catch (e) { window.__mostrarLogin(traduzir(e.code || e.message)); }
+  };
+
+  document.getElementById('loginSenha').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('btnEntrarEmail').click();
+  });
+
   document.getElementById('btnGoogle').onclick = async () => {
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());

@@ -28,7 +28,9 @@ Nesse ponto o app já funciona, mas gravando só no aparelho. Para os parceiros 
 
 1. Em <https://console.firebase.google.com>, crie um projeto.
 2. **Criação → Firestore Database → Criar banco de dados**, modo produção, região `southamerica-east1`.
-3. **Criação → Authentication → Começar → Google** e ative.
+3. **Criação → Authentication → Começar** e ative os métodos que for usar:
+   - **E-mail/senha** — serve para qualquer e-mail, inclusive os que não são Gmail.
+   - **Google** — entrada com um clique, para quem tem conta Google.
 4. Ainda em Authentication, aba **Settings → Domínios autorizados**, adicione **cada endereço** onde o app for publicado. Hoje são dois:
    - `alanclebersantana.github.io`
    - `mpliminares.netlify.app`
@@ -86,6 +88,12 @@ A própria tela diz o que falta e já mostra o seu UID com botão de copiar:
 
 ## 3. Dar acesso a um parceiro
 
+O parceiro pode entrar de duas formas, com o mesmo e-mail que você cadastrou nele:
+
+- **E-mail e senha** — na primeira vez ele usa "Criar conta com este e-mail" para definir a senha. Serve para qualquer provedor.
+- **Entrar com Google** — se ele tiver conta Google nesse e-mail.
+
+
 > **Antes de copiar qualquer link:** abra o app pelo endereço publicado (o do GitHub Pages). O link do convite é montado a partir da página onde você está no momento. Se você abrir o `index.html` por um preview do Google Drive, pelo seu computador ou pelo `localhost`, o parceiro vai receber um link para lá e cair numa tela de acesso negado. A própria tela de Acessos mostra qual endereço está sendo usado e avisa quando ele não serve.
 
 > **Para testar o login do parceiro**, use uma janela anônima e **outra** conta Google. Se você abrir o convite com a mesma conta que está em `admins`, o app entra como administrador — que é o acesso mais amplo — e mostra um aviso explicando.
@@ -105,14 +113,13 @@ Para tirar o acesso, use o **X** ao lado do código e apague o e-mail do cadastr
 
 Em **Mais → Ler extrato — IA** você envia o print ou o PDF do extrato do programa. A IA agrupa parcelas e bônus da mesma promoção, separa voos e estornos, e sugere a operação do mês de cada grupo. Você confere, ajusta as milhas se precisar, e só então gera os lançamentos.
 
-Para funcionar, precisa de uma chave da API do Google Gemini:
+Para funcionar, precisa de uma chave da API do Google Gemini. Gere em <https://aistudio.google.com/apikey> e grave no topo do `index.html`:
 
-1. Gere em <https://aistudio.google.com/apikey>.
-2. Cole em **Mais → Ajustes → Leitura de extrato por IA**.
+```js
+window.MP_GEMINI = "AIza...";
+```
 
-A chave fica guardada só no aparelho — não vai para o Firestore nem para os outros dispositivos, então precisa ser cadastrada em cada um.
-
-> **Restrinja a chave** no Google Cloud: limite por site (os domínios do app) e apenas à *Generative Language API*. Uma chave usada no navegador pode ser lida por quem abrir o código da página; a restrição é o que impede que seja usada em outro lugar.
+Assim ela vale para todos os aparelhos, sem precisar cadastrar um a um. Também dá para cadastrar em **Mais → Ajustes → Leitura de extrato por IA**: nesse caso ela vai para o Firestore, em `config/privado`, que só o administrador lê — o parceiro não enxerga.
 
 Ao gerar, o valor e o custo de cada lançamento saem dos parâmetros da operação vinculada. Se a operação estiver no modo "custo total", o rateio é refeito considerando as contas novas.
 
@@ -143,6 +150,7 @@ A restrição não depende da tela: o banco recusa a leitura. Os custos ficam em
 | `custos` | custo e CPM de custo de cada lançamento | só admin |
 | `pagamentos` | baixas com data, valor e comprovante | admin; parceiro, as dele |
 | `config/geral` | companhias, fornecedores, preferências | qualquer logado |
+| `config/privado` | chave da API de leitura de extrato | só admin |
 | `convites` | código → parceiro, usado no 1º acesso | leitura por id exato |
 | `admins` | um documento por UID de administrador | o próprio |
 

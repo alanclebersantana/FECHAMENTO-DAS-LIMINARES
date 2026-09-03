@@ -88,9 +88,18 @@ service cloud.firestore {
     }
 
     // ---------- configuração compartilhada ----------
-    match /config/{doc} {
+    // Companhias, fornecedores e preferências do relatório: o parceiro
+    // precisa ler para o app montar as telas dele.
+    match /config/geral {
       allow read:  if logado();
       allow write: if admin();
+    }
+
+    // ---------- configuração reservada ----------
+    // Chave da API de leitura de extrato. Fica separada de config/geral
+    // justamente para não ser lida por quem não é administrador.
+    match /config/privado {
+      allow read, write: if admin();
     }
 
     // ---------- convites ----------
