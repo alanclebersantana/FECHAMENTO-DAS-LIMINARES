@@ -1,5 +1,5 @@
-const CACHE = 'mp-central-v3';
-const ASSETS = ['./','./index.html','./manifest.json','./logo.png',
+const CACHE = 'mp-central-v4';
+const ASSETS = ['./','./index.html','./instalar.html','./manifest.json','./logo.png',
   './icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png'];
 
 self.addEventListener('install', e => {
