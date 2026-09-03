@@ -1,4 +1,4 @@
-const CACHE = 'mp-central-2026.09.03-1912';
+const CACHE = 'mp-central-2026.09.03-1935';
 const ASSETS = ['./','./index.html','./instalar.html','./manifest.json','./logo.png',
   './icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png'];
 
@@ -21,6 +21,9 @@ self.addEventListener('fetch', e => {
 
   // chamadas do Firebase e das fontes nunca passam pelo cache
   const url = new URL(req.url);
+
+  // a página de manutenção sempre vem do servidor
+  if (url.pathname.endsWith('/atualizar.html')) return;
   if (/googleapis|gstatic|firebase/.test(url.hostname)) return;
 
   // A página sempre é buscada na rede primeiro. Sem isso, uma publicação

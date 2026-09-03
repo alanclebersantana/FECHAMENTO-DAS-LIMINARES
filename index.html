@@ -31,7 +31,7 @@
   window.MP_USA_FIREBASE = !!window.MP_FIREBASE.apiKey;
 
   // carimbo da publicação — aparece em Mais → Ajustes → Versão do app
-  window.MP_VERSAO = "2026.09.03-1912";
+  window.MP_VERSAO = "2026.09.03-1935";
 
   // Chave da API do Google Gemini, usada na leitura de extrato.
   // Fica gravada aqui, no próprio app: vale para todos os aparelhos,
@@ -458,6 +458,14 @@ html[data-tema="escuro"] .aviso-topo{color:#E9C46A}
 .topbar .brand i{font-style:normal;font-size:calc(10.5px * var(--escala));font-weight:600;
   letter-spacing:.08em;color:rgba(255,255,255,.6);margin-top:2px}
 
+/* versão publicada, sempre visível — inclusive na tela de acesso */
+.tag-versao{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:calc(10.5px * var(--escala));font-weight:600;
+  color:rgba(255,255,255,.5);margin-right:10px;white-space:nowrap;
+}
+@media (max-width:520px){ .tag-versao{display:none} }
+
 /* rótulo da conta logada no cabeçalho */
 .tag-conta{
   font-size:calc(12px * var(--escala));font-weight:600;margin-right:8px;
@@ -605,6 +613,7 @@ body.parceiro .subnav{display:none}
     <i>controle de liminares</i>
   </div>
   <div class="spacer"></div>
+  <span id="tagVersao" class="tag-versao" title="Versão publicada deste app"></span>
   <span id="tagParceiro" class="tag-conta" hidden></span>
   <button class="ghost" id="btnSair" hidden>Sair</button>
   <span id="tagModo" class="no-admin tag-modo" hidden></span>
@@ -750,14 +759,20 @@ body.parceiro .subnav{display:none}
           <select id="clInvestidor"></select></div>
       </div>
       <p class="hint" style="margin:10px 0 0">O valor e os pontos valem <b>para cada conta marcada</b>.</p>
+      <div style="margin-top:14px"><button class="btn" id="btnAbrirClube">Lançar clube »</button></div>
+    </div>
 
-      <div class="toolbar" style="margin:14px 0 10px">
+    <div class="box" id="boxLancarClube" hidden>
+      <h3>Lançar clube nas contas</h3>
+      <div class="params" id="clParams"></div>
+      <div class="toolbar" style="margin-bottom:10px">
         <button class="btn alt acao-min" id="clTodas" type="button">Marcar todas</button>
         <button class="btn alt acao-min" id="clNenhuma" type="button">Desmarcar</button>
+        <button class="btn alt acao-min" id="clFechar" type="button">Fechar</button>
       </div>
       <div id="clContas"></div>
       <div class="totbar" id="clTotais"></div>
-      <div style="margin-top:12px"><button class="btn" id="btnLancarClube">Lançar clube nas contas</button></div>
+      <div style="margin-top:12px"><button class="btn" id="btnLancarClube">Confirmar lançamento</button></div>
     </div>
 
     <div class="box">
@@ -1293,6 +1308,13 @@ function abrirLogin(erro){
   el('codigoErro').hidden = !erro;
   setTimeout(()=>el('codigoInput').focus(),100);
 }
+/* a versão aparece antes de qualquer login: é o que permite saber
+   na hora se o navegador está servindo o build antigo */
+(function carimbarVersao(){
+  const t = el('tagVersao');
+  if(t) t.textContent = window.MP_VERSAO || '';
+})();
+
 /* alterna a tela de acesso conforme o modo */
 (function ajustarTelaLogin(){
   const nuvem = !!window.MP_USA_FIREBASE;
@@ -2291,6 +2313,31 @@ function totaisClube(){
 
 const ehClube = l => l.opTipo === 'Clube' && !l.operacaoId;
 
+/* etapa 1: confere os dados e só então mostra as contas */
+el('btnAbrirClube').onclick = ()=>{
+  const cia = nomeDoClube();
+  if(!cia){ alert('Escolha o programa. Em "Outros", informe o nome.'); return; }
+  const data = el('clData').value;
+  if(!data){ alert('Informe a data.'); return; }
+  const valor  = parseFloat(el('clValor').value)  || 0;
+  const pontos = parseFloat(el('clPontos').value) || 0;
+  if(pontos <= 0 && valor <= 0){ alert('Informe o valor do clube ou os pontos recebidos.'); return; }
+  if(fechado(mesKey(data))){ alert('O mês desta data está fechado. Reabra em Ajustes.'); return; }
+
+  el('clParams').innerHTML = [
+    cia, data.split('-').reverse().join('/'),
+    'Valor: ' + money(valor), 'Pontos: ' + num(pontos),
+    'Investidor: ' + (el('clInvestidor').value || INVESTIDORES[0])
+  ].map(t=>`<span>${esc(t)}</span>`).join('');
+
+  el('boxLancarClube').hidden = false;
+  renderContasClube();
+  el('boxLancarClube').scrollIntoView({behavior:'smooth', block:'start'});
+};
+
+el('clFechar').onclick = ()=>{ el('boxLancarClube').hidden = true; };
+
+/* etapa 2: grava nas contas marcadas */
 el('btnLancarClube').onclick = ()=>{
   const cia = nomeDoClube();
   if(!cia){ alert('Informe o nome do programa.'); return; }
@@ -2316,6 +2363,7 @@ el('btnLancarClube').onclick = ()=>{
   });
   save();
   el('mesRef').value = mesKey(data);
+  el('boxLancarClube').hidden = true;
   refreshAll();
   alert(contas.length + ' clube(s) lançado(s).');
 };
@@ -3023,7 +3071,8 @@ function refreshAll(){
   }
 
   renderFiltroContas(); contarFiltros();
-  renderOps(); renderProgramasClube(); renderInvestidorClube(); renderContasClube();
+  renderOps(); renderProgramasClube(); renderInvestidorClube();
+  if(el('boxLancarClube') && !el('boxLancarClube').hidden) renderContasClube();
   renderLancamentos(); renderFinanceiro();
   renderExtrato(); renderCadastros(); renderAcessos(); renderFechar(); renderStatusNuvem(); renderStatusVersao(); renderTagModo(); renderAparencia(); renderChaveIA();
   const bf = el('btnForcarAtualizar'); if(bf) bf.onclick = forcarAtualizacao;
@@ -3518,9 +3567,40 @@ if (window.MP_USA_FIREBASE) {
 </script>
 
 <script>
-if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+/* ------------------------------------------------------------------
+   Registro do service worker.
+
+   O navegador guarda o próprio sw.js em cache (até 24h). Se ele servir
+   a cópia velha desse arquivo, o service worker antigo nunca é trocado
+   e continua entregando a página antiga, mesmo com os arquivos novos
+   já publicados no servidor.
+
+   Duas travas contra isso:
+   - updateViaCache:'none' proíbe o navegador de usar o sw.js do cache;
+   - o ?v= muda a cada publicação, então a URL do script nunca é a mesma.
+
+   E quando o service worker novo assume o controle, a página recarrega
+   uma vez sozinha, para o que está na tela vir do build novo.
+------------------------------------------------------------------ */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register(
+        'sw.js?v=' + (window.MP_VERSAO || ''),
+        { updateViaCache: 'none' }
+      );
+      reg.update();
+    } catch (e) { console.warn('sw:', e); }
+  });
+
+  let recarregando = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (recarregando) return;
+    recarregando = true;
+    location.reload();
+  });
 }
 </script>
+
 </body>
 </html>
