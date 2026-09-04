@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-tema="claro">
+<html lang="pt-BR" data-tema="claro" data-modo="pc">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -31,7 +31,7 @@
   window.MP_USA_FIREBASE = !!window.MP_FIREBASE.apiKey;
 
   // carimbo da publicação — aparece em Mais → Ajustes → Versão do app
-  window.MP_VERSAO = "2026.09.03-2013";
+  window.MP_VERSAO = "2026.09.04-1838";
 
   // Chave da API do Google Gemini, usada na leitura de extrato.
   // Fica gravada aqui, no próprio app: vale para todos os aparelhos,
@@ -423,6 +423,148 @@ html[data-tema="escuro"] .aviso-topo{color:#E9C46A}
 .aviso-topo code{font-family:ui-monospace,monospace;background:rgba(0,0,0,.08);padding:1px 5px;border-radius:4px}
 .aviso-topo button{background:none;border:0;color:inherit;font-size:calc(20px * var(--escala));line-height:1;cursor:pointer;padding:0 4px}
 
+
+/* ============================================================
+   Dois modos de visualização
+   - pc     : barra lateral fixa, sem barra inferior
+   - mobile : exatamente o layout de antes, com barra inferior
+   ============================================================ */
+.lateral{display:none}
+html[data-modo="pc"] .lateral{
+  display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;width:236px;z-index:45;
+  background:var(--navy);color:#fff;padding:16px 0 14px;overflow-y:auto;
+}
+html[data-modo="pc"] .topbar{display:none}
+html[data-modo="pc"] .tabbar{display:none}
+html[data-modo="pc"] body,
+html[data-modo="pc"] .wrap{padding-bottom:28px}
+html[data-modo="pc"] .wrap{margin-left:236px;max-width:1240px;padding-top:22px}
+html[data-modo="pc"] .btn-modo{display:none}
+html[data-modo="mobile"] #p-dash{display:none !important}
+html[data-modo="mobile"] .lat-modo{display:none}
+body{transition:none}
+
+.lat-marca{display:flex;align-items:center;gap:11px;padding:0 16px 16px}
+.lat-marca img{width:34px;height:34px;border-radius:9px;flex:none}
+.lat-marca b{display:block;font-size:calc(13.5px * var(--escala));font-weight:900;letter-spacing:.03em}
+.lat-marca i{display:block;font-style:normal;font-size:calc(9.5px * var(--escala));font-weight:600;
+  letter-spacing:.09em;color:rgba(255,255,255,.5);margin-top:2px}
+
+/* o app não zera o estilo padrão de <button>; sem isto os itens da
+   lateral aparecem com o fundo cinza claro do navegador */
+.lateral button{background:transparent;border:0;color:inherit;cursor:pointer}
+.dash-mes button{background:transparent;border:0;cursor:pointer}
+
+.lat-busca{position:relative;margin:0 12px 6px}
+.lat-busca svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);
+  width:15px;height:15px;stroke:rgba(255,255,255,.45);fill:none;stroke-width:2;pointer-events:none}
+.lat-busca input{
+  width:100%;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.12);
+  color:#fff;border-radius:9px;padding:9px 30px 9px 33px;font-size:calc(13px * var(--escala));
+}
+.lat-busca input::placeholder{color:rgba(255,255,255,.45)}
+.lat-busca input:focus{outline:2px solid rgba(255,255,255,.25);outline-offset:0;border-color:transparent}
+.lat-busca button{position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  color:rgba(255,255,255,.6);font-size:18px;line-height:1;padding:2px 5px}
+
+.lat-achados{margin:2px 12px 8px;background:rgba(0,0,0,.22);border-radius:10px;
+  padding:6px;max-height:260px;overflow-y:auto}
+.lat-achados .grupo{font-size:calc(9.5px * var(--escala));font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:rgba(255,255,255,.4);padding:8px 9px 4px}
+.lat-achados button{width:100%;text-align:left;display:flex;align-items:center;gap:9px;
+  padding:8px 9px;border-radius:8px;color:rgba(255,255,255,.85);font-size:calc(13px * var(--escala))}
+.lat-achados button:hover{background:rgba(255,255,255,.1)}
+.lat-achados button span{margin-left:auto;font-size:calc(11px * var(--escala));color:rgba(255,255,255,.45)}
+.lat-achados .vazio{padding:10px 9px;font-size:calc(12.5px * var(--escala));color:rgba(255,255,255,.45)}
+
+.lat-nav{display:flex;flex-direction:column;gap:2px;padding:6px 12px;flex:1}
+.lat-nav button{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;
+  background:transparent;color:rgba(255,255,255,.78);
+  font-size:calc(13.5px * var(--escala));font-weight:600;text-align:left}
+.lat-nav button svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round;flex:none}
+.lat-nav button:hover{background:rgba(255,255,255,.08);color:#fff}
+.lat-nav button.on{background:rgba(255,255,255,.14);color:#fff}
+.lat-grupo{font-size:calc(9.5px * var(--escala));font-weight:800;letter-spacing:.12em;
+  color:rgba(255,255,255,.35);padding:14px 12px 5px;text-transform:uppercase}
+
+.lat-pe{padding:10px 12px 0;border-top:1px solid rgba(255,255,255,.1);margin-top:8px}
+.lat-modo{display:flex;align-items:center;gap:9px;width:100%;padding:10px 12px;border-radius:9px;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);
+  color:#fff;font-size:calc(12.5px * var(--escala));font-weight:600;margin-bottom:10px}
+.lat-modo:hover{background:rgba(255,255,255,.16)}
+.lat-modo svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.9;flex:none}
+.lat-user{display:flex;align-items:center;gap:10px;padding:4px 4px 0}
+.lat-user .av{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.16);
+  display:grid;place-items:center;font-weight:800;font-size:calc(11px * var(--escala));flex:none}
+.lat-quem{flex:1;min-width:0}
+.lat-quem b{display:block;font-size:calc(12.5px * var(--escala));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lat-quem span{display:block;font-size:calc(10.5px * var(--escala));color:rgba(255,255,255,.5)}
+.lat-sair{color:rgba(255,255,255,.6);padding:5px;background:transparent}
+.lat-sair:hover{color:#fff}
+.lat-sair svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---- topo do dashboard ---- */
+.dash-topo{display:flex;align-items:flex-end;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+.dash-topo h1{font-size:calc(21px * var(--escala));font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+.dash-topo p{margin:3px 0 0;font-size:calc(13px * var(--escala));color:var(--muted)}
+.dash-mes{margin-left:auto;display:flex;align-items:center;background:var(--card);
+  border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.dash-mes button{padding:8px 12px;color:var(--muted);font-size:calc(16px * var(--escala))}
+.dash-mes button:hover{background:var(--sutil)}
+.dash-mes span{padding:8px 15px;font-weight:700;font-size:calc(13.5px * var(--escala));
+  border-left:1px solid var(--line);border-right:1px solid var(--line);white-space:nowrap}
+
+/* ---- blocos do dashboard ---- */
+.dash-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:16px}
+.dash-kpi{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:16px 18px;box-shadow:var(--shadow)}
+.dash-kpi .rot{font-size:calc(11.5px * var(--escala));color:var(--muted);font-weight:600;
+  display:flex;align-items:center;gap:7px}
+.dash-kpi .rot i{width:7px;height:7px;border-radius:50%;display:block;flex:none}
+.dash-kpi b{display:block;font-size:calc(25px * var(--escala));font-weight:800;letter-spacing:-.03em;
+  margin-top:9px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.dash-kpi .var{font-size:calc(12px * var(--escala));font-weight:600;margin-top:7px;color:var(--muted)}
+.dash-kpi .var.sobe{color:var(--green-dark)}
+.dash-kpi .var.desce{color:#B4232A}
+
+.dash-cols{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;align-items:start}
+@media (max-width:1080px){ .dash-cols{grid-template-columns:1fr} }
+.dash-card{background:var(--card);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);overflow:hidden}
+.dash-card h3{font-size:calc(14.5px * var(--escala));font-weight:700;padding:15px 18px;
+  border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px;color:var(--ink)}
+.dash-card h3 span{margin-left:auto;font-size:calc(12px * var(--escala));font-weight:600;color:var(--muted)}
+.dash-card .conteudo{padding:6px 10px}
+.dash-card table{width:100%;border-collapse:collapse}
+.dash-card th{font-size:calc(10.5px * var(--escala));text-transform:uppercase;letter-spacing:.07em;
+  color:var(--muted);text-align:left;padding:8px 8px;font-weight:700}
+.dash-card td{padding:10px 8px;font-size:calc(13.5px * var(--escala));border-top:1px solid var(--line);color:var(--ink)}
+.dash-card tbody tr:first-child td{border-top:0}
+.dash-card tbody tr:hover td{background:var(--sutil)}
+.dash-card .n{text-align:right;font-variant-numeric:tabular-nums}
+.dash-card .rodape{padding:12px 18px;border-top:1px solid var(--line);display:flex;
+  justify-content:space-between;font-size:calc(13px * var(--escala));font-weight:700;background:var(--sutil)}
+.dash-sub{display:block;font-size:calc(11.5px * var(--escala));color:var(--muted);font-weight:500;margin-top:2px}
+
+.dash-parc{padding:16px 18px;display:flex;flex-direction:column;gap:15px}
+.dash-p .cab{display:flex;align-items:center;gap:8px;font-size:calc(13.5px * var(--escala));margin-bottom:7px}
+.dash-p .cab b{font-weight:700;color:var(--ink)}
+.dash-p .cab .v{margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink)}
+.dash-p .barra{height:7px;border-radius:4px;background:var(--sutil);overflow:hidden}
+.dash-p .barra i{display:block;height:100%;border-radius:4px}
+
+/* ---- busca no diálogo (modo celular) ---- */
+#achadosMob button{width:100%;text-align:left;display:flex;align-items:center;gap:10px;
+  padding:11px 12px;border-radius:9px;font-size:calc(14px * var(--escala));color:var(--ink);
+  background:transparent;border:0;cursor:pointer}
+#achadosMob button:hover{background:var(--sutil)}
+#achadosMob button span{margin-left:auto;font-size:calc(12px * var(--escala));color:var(--muted)}
+#achadosMob .grupo{font-size:calc(10.5px * var(--escala));font-weight:800;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);padding:12px 12px 4px}
+#achadosMob .vazio{padding:14px 12px;color:var(--muted);font-size:calc(13.5px * var(--escala))}
+
+/* ---- cabeçalho do relatório volta a caber no modo pc ---- */
+html[data-modo="pc"] .report-scroll{max-width:100%}
+
 /* ---- cabeçalho ---- */
 .brand-logo{width:34px;height:34px;border-radius:8px;flex:none;display:block}
 .topbar .brand{line-height:1.1}
@@ -451,12 +593,260 @@ html[data-tema="escuro"] .aviso-topo{color:#E9C46A}
 .aviso-topo code{font-family:ui-monospace,monospace;background:rgba(0,0,0,.08);padding:1px 5px;border-radius:4px}
 .aviso-topo button{background:none;border:0;color:inherit;font-size:calc(20px * var(--escala));line-height:1;cursor:pointer;padding:0 4px}
 
+
+/* ============================================================
+   Dois modos de visualização
+   - pc     : barra lateral fixa, sem barra inferior
+   - mobile : exatamente o layout de antes, com barra inferior
+   ============================================================ */
+.lateral{display:none}
+html[data-modo="pc"] .lateral{
+  display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;width:236px;z-index:45;
+  background:var(--navy);color:#fff;padding:16px 0 14px;overflow-y:auto;
+}
+html[data-modo="pc"] .topbar{display:none}
+html[data-modo="pc"] .tabbar{display:none}
+html[data-modo="pc"] body,
+html[data-modo="pc"] .wrap{padding-bottom:28px}
+html[data-modo="pc"] .wrap{margin-left:236px;max-width:1240px;padding-top:22px}
+html[data-modo="pc"] .btn-modo{display:none}
+html[data-modo="mobile"] #p-dash{display:none !important}
+html[data-modo="mobile"] .lat-modo{display:none}
+body{transition:none}
+
+.lat-marca{display:flex;align-items:center;gap:11px;padding:0 16px 16px}
+.lat-marca img{width:34px;height:34px;border-radius:9px;flex:none}
+.lat-marca b{display:block;font-size:calc(13.5px * var(--escala));font-weight:900;letter-spacing:.03em}
+.lat-marca i{display:block;font-style:normal;font-size:calc(9.5px * var(--escala));font-weight:600;
+  letter-spacing:.09em;color:rgba(255,255,255,.5);margin-top:2px}
+
+.lat-busca{position:relative;margin:0 12px 6px}
+.lat-busca svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);
+  width:15px;height:15px;stroke:rgba(255,255,255,.45);fill:none;stroke-width:2;pointer-events:none}
+.lat-busca input{
+  width:100%;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.12);
+  color:#fff;border-radius:9px;padding:9px 30px 9px 33px;font-size:calc(13px * var(--escala));
+}
+.lat-busca input::placeholder{color:rgba(255,255,255,.45)}
+.lat-busca input:focus{outline:2px solid rgba(255,255,255,.25);outline-offset:0;border-color:transparent}
+.lat-busca button{position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  color:rgba(255,255,255,.6);font-size:18px;line-height:1;padding:2px 5px}
+
+.lat-achados{margin:2px 12px 8px;background:rgba(0,0,0,.22);border-radius:10px;
+  padding:6px;max-height:260px;overflow-y:auto}
+.lat-achados .grupo{font-size:calc(9.5px * var(--escala));font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:rgba(255,255,255,.4);padding:8px 9px 4px}
+.lat-achados button{width:100%;text-align:left;display:flex;align-items:center;gap:9px;
+  padding:8px 9px;border-radius:8px;color:rgba(255,255,255,.85);font-size:calc(13px * var(--escala))}
+.lat-achados button:hover{background:rgba(255,255,255,.1)}
+.lat-achados button span{margin-left:auto;font-size:calc(11px * var(--escala));color:rgba(255,255,255,.45)}
+.lat-achados .vazio{padding:10px 9px;font-size:calc(12.5px * var(--escala));color:rgba(255,255,255,.45)}
+
+.lat-nav{display:flex;flex-direction:column;gap:2px;padding:6px 12px;flex:1}
+.lat-nav button{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;
+  color:rgba(255,255,255,.72);font-size:calc(13.5px * var(--escala));font-weight:600;text-align:left}
+.lat-nav button svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round;flex:none}
+.lat-nav button:hover{background:rgba(255,255,255,.08);color:#fff}
+.lat-nav button.on{background:rgba(255,255,255,.14);color:#fff}
+.lat-grupo{font-size:calc(9.5px * var(--escala));font-weight:800;letter-spacing:.12em;
+  color:rgba(255,255,255,.35);padding:14px 12px 5px;text-transform:uppercase}
+
+.lat-pe{padding:10px 12px 0;border-top:1px solid rgba(255,255,255,.1);margin-top:8px}
+.lat-modo{display:flex;align-items:center;gap:9px;width:100%;padding:9px 12px;border-radius:9px;
+  background:rgba(255,255,255,.09);color:#fff;font-size:calc(12.5px * var(--escala));font-weight:600;margin-bottom:10px}
+.lat-modo:hover{background:rgba(255,255,255,.16)}
+.lat-modo svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.9;flex:none}
+.lat-user{display:flex;align-items:center;gap:10px;padding:4px 4px 0}
+.lat-user .av{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.16);
+  display:grid;place-items:center;font-weight:800;font-size:calc(11px * var(--escala));flex:none}
+.lat-quem{flex:1;min-width:0}
+.lat-quem b{display:block;font-size:calc(12.5px * var(--escala));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lat-quem span{display:block;font-size:calc(10.5px * var(--escala));color:rgba(255,255,255,.5)}
+.lat-sair{color:rgba(255,255,255,.6);padding:5px}
+.lat-sair:hover{color:#fff}
+.lat-sair svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---- topo do dashboard ---- */
+.dash-topo{display:flex;align-items:flex-end;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+.dash-topo h1{font-size:calc(21px * var(--escala));font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+.dash-topo p{margin:3px 0 0;font-size:calc(13px * var(--escala));color:var(--muted)}
+.dash-mes{margin-left:auto;display:flex;align-items:center;background:var(--card);
+  border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.dash-mes button{padding:8px 12px;color:var(--muted);font-size:calc(16px * var(--escala))}
+.dash-mes button:hover{background:var(--sutil)}
+.dash-mes span{padding:8px 15px;font-weight:700;font-size:calc(13.5px * var(--escala));
+  border-left:1px solid var(--line);border-right:1px solid var(--line);white-space:nowrap}
+
+/* ---- blocos do dashboard ---- */
+.dash-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:16px}
+.dash-kpi{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:16px 18px;box-shadow:var(--shadow)}
+.dash-kpi .rot{font-size:calc(11.5px * var(--escala));color:var(--muted);font-weight:600;
+  display:flex;align-items:center;gap:7px}
+.dash-kpi .rot i{width:7px;height:7px;border-radius:50%;display:block;flex:none}
+.dash-kpi b{display:block;font-size:calc(25px * var(--escala));font-weight:800;letter-spacing:-.03em;
+  margin-top:9px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.dash-kpi .var{font-size:calc(12px * var(--escala));font-weight:600;margin-top:7px;color:var(--muted)}
+.dash-kpi .var.sobe{color:var(--green-dark)}
+.dash-kpi .var.desce{color:#B4232A}
+
+.dash-cols{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;align-items:start}
+@media (max-width:1080px){ .dash-cols{grid-template-columns:1fr} }
+.dash-card{background:var(--card);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);overflow:hidden}
+.dash-card h3{font-size:calc(14.5px * var(--escala));font-weight:700;padding:15px 18px;
+  border-bottom:1px solid var(--line);display:flex;align-items:center;gap:9px;color:var(--ink)}
+.dash-card h3 span{margin-left:auto;font-size:calc(12px * var(--escala));font-weight:600;color:var(--muted)}
+.dash-card .conteudo{padding:6px 10px}
+.dash-card table{width:100%;border-collapse:collapse}
+.dash-card th{font-size:calc(10.5px * var(--escala));text-transform:uppercase;letter-spacing:.07em;
+  color:var(--muted);text-align:left;padding:8px 8px;font-weight:700}
+.dash-card td{padding:10px 8px;font-size:calc(13.5px * var(--escala));border-top:1px solid var(--line);color:var(--ink)}
+.dash-card tbody tr:first-child td{border-top:0}
+.dash-card tbody tr:hover td{background:var(--sutil)}
+.dash-card .n{text-align:right;font-variant-numeric:tabular-nums}
+.dash-card .rodape{padding:12px 18px;border-top:1px solid var(--line);display:flex;
+  justify-content:space-between;font-size:calc(13px * var(--escala));font-weight:700;background:var(--sutil)}
+.dash-sub{display:block;font-size:calc(11.5px * var(--escala));color:var(--muted);font-weight:500;margin-top:2px}
+
+.dash-parc{padding:16px 18px;display:flex;flex-direction:column;gap:15px}
+.dash-p .cab{display:flex;align-items:center;gap:8px;font-size:calc(13.5px * var(--escala));margin-bottom:7px}
+.dash-p .cab b{font-weight:700;color:var(--ink)}
+.dash-p .cab .v{margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink)}
+.dash-p .barra{height:7px;border-radius:4px;background:var(--sutil);overflow:hidden}
+.dash-p .barra i{display:block;height:100%;border-radius:4px}
+
+/* ---- busca no diálogo (modo celular) ---- */
+#achadosMob button{width:100%;text-align:left;display:flex;align-items:center;gap:10px;
+  padding:11px 12px;border-radius:9px;font-size:calc(14px * var(--escala));color:var(--ink)}
+#achadosMob button:hover{background:var(--sutil)}
+#achadosMob button span{margin-left:auto;font-size:calc(12px * var(--escala));color:var(--muted)}
+#achadosMob .grupo{font-size:calc(10.5px * var(--escala));font-weight:800;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);padding:12px 12px 4px}
+#achadosMob .vazio{padding:14px 12px;color:var(--muted);font-size:calc(13.5px * var(--escala))}
+
+/* ---- cabeçalho do relatório volta a caber no modo pc ---- */
+html[data-modo="pc"] .report-scroll{max-width:100%}
+
 /* ---- cabeçalho ---- */
 .brand-logo{width:34px;height:34px;border-radius:8px;flex:none}
 .topbar .brand{display:flex;flex-direction:column;line-height:1.1}
 .topbar .brand b{font-size:calc(15px * var(--escala));font-weight:900;letter-spacing:.03em}
 .topbar .brand i{font-style:normal;font-size:calc(10.5px * var(--escala));font-weight:600;
   letter-spacing:.08em;color:rgba(255,255,255,.6);margin-top:2px}
+
+/* ============================================================
+   Dois modos de visualização
+   .modo-mobile  = o app como sempre foi: barra inferior
+   .modo-pc      = barra lateral fixa; as páginas seguem idênticas
+   ============================================================ */
+.lateral{display:none}
+body.modo-pc .tabbar{display:none}
+body.modo-pc{padding-bottom:0}
+body.modo-pc .wrap{margin-left:240px;max-width:1180px;padding:22px 26px 40px}
+body.modo-pc .topbar{margin-left:240px}
+body.modo-pc .aviso-topo{margin-left:240px}
+body.modo-mobile .btn-modo{display:inline-flex;align-items:center;gap:7px}
+body.modo-pc .btn-modo{display:none}
+
+body.modo-pc .lateral{
+  display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;width:240px;z-index:60;
+  background:var(--navy);color:#fff;padding:16px 0 14px;overflow-y:auto;
+}
+.lat-marca{display:flex;align-items:center;gap:11px;padding:0 16px 20px}
+.lat-marca img{width:36px;height:36px;border-radius:9px;flex:none}
+.lat-marca b{display:block;font-size:calc(13.5px * var(--escala));font-weight:900;letter-spacing:.03em}
+.lat-marca i{display:block;font-style:normal;font-size:calc(9.5px * var(--escala));font-weight:600;
+  letter-spacing:.09em;color:rgba(255,255,255,.55);margin-top:2px}
+
+.lat-nav{display:flex;flex-direction:column;gap:2px;padding:0 10px;flex:1}
+.lat-nav button{
+  display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;width:100%;
+  color:rgba(255,255,255,.74);font-size:calc(13.5px * var(--escala));font-weight:600;text-align:left;
+}
+.lat-nav button svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round;flex:none}
+.lat-nav button:hover{background:rgba(255,255,255,.08);color:#fff}
+.lat-nav button.on{background:rgba(255,255,255,.14);color:#fff}
+.lat-grupo{font-size:calc(9.5px * var(--escala));font-weight:800;letter-spacing:.12em;
+  color:rgba(255,255,255,.38);padding:16px 12px 6px;text-transform:uppercase}
+
+.lat-pe{padding:12px 14px 0;margin-top:8px}
+.lat-modo{
+  display:flex;align-items:center;gap:9px;width:100%;padding:9px 12px;border-radius:9px;
+  background:rgba(255,255,255,.1);color:#fff;font-size:calc(12.5px * var(--escala));font-weight:700;
+  margin-bottom:12px;
+}
+.lat-modo:hover{background:rgba(255,255,255,.18)}
+.lat-modo svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round}
+.lat-user{display:flex;align-items:center;gap:10px;padding-top:12px;border-top:1px solid rgba(255,255,255,.12)}
+.lat-user .av{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.16);
+  display:grid;place-items:center;font-weight:800;font-size:calc(11.5px * var(--escala));flex:none}
+.lat-quem{flex:1;min-width:0}
+.lat-quem b{display:block;font-size:calc(12.5px * var(--escala));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lat-quem span{display:block;font-size:calc(10.5px * var(--escala));color:rgba(255,255,255,.55);margin-top:1px}
+.lat-sair{color:rgba(255,255,255,.6);padding:6px;border-radius:7px;flex:none}
+.lat-sair:hover{background:rgba(255,255,255,.12);color:#fff}
+.lat-sair svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+
+/* no modo parceiro a lateral mostra só o que ele pode ver */
+body.parceiro .no-parceiro{display:none !important}
+
+/* ---- Dashboard ---- */
+.dash-topo{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.dash-topo h1{font-size:calc(22px * var(--escala));letter-spacing:-.02em;color:var(--ink)}
+.dash-topo p{margin:4px 0 0;font-size:calc(13px * var(--escala));color:var(--muted)}
+.dash-mes{margin-left:auto;display:flex;align-items:center;border:1px solid var(--line);
+  border-radius:10px;overflow:hidden;background:var(--card)}
+.dash-mes button{padding:9px 13px;color:var(--muted);font-size:16px;line-height:1}
+.dash-mes button:hover{background:var(--sutil)}
+.dash-mes span{padding:9px 15px;font-weight:700;font-size:calc(13.5px * var(--escala));
+  border-left:1px solid var(--line);border-right:1px solid var(--line);white-space:nowrap}
+
+.dash-grade{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+.dash-grade > *{grid-column:span 12}
+@media (min-width:900px){
+  .g3{grid-column:span 3} .g4{grid-column:span 4} .g5{grid-column:span 5}
+  .g6{grid-column:span 6} .g7{grid-column:span 7} .g8{grid-column:span 8}
+}
+.dcard{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px;
+  box-shadow:var(--shadow)}
+.dcard h3{font-size:calc(14px * var(--escala));font-weight:700;color:var(--ink);
+  display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.dcard h3 span{margin-left:auto;font-size:calc(12px * var(--escala));color:var(--muted);font-weight:500}
+.dcard .rot{font-size:calc(11px * var(--escala));color:var(--muted);font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:7px}
+.dcard .rot i{width:7px;height:7px;border-radius:50%;display:block;flex:none}
+.dcard .big{display:block;font-size:calc(25px * var(--escala));font-weight:800;letter-spacing:-.03em;
+  margin-top:9px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.dcard .big.g{color:var(--green-dark)} .dcard .big.r{color:#B4232A} .dcard .big.a{color:#9A6E00}
+.dcard .obs{font-size:calc(12px * var(--escala));margin-top:7px;color:var(--muted);
+  display:flex;align-items:center;gap:5px}
+.obs.sobe{color:var(--green-dark)} .obs.desce{color:#B4232A}
+
+.dgraf{display:flex;align-items:flex-end;gap:4px;height:110px;margin-top:6px}
+.dgraf i{flex:1;border-radius:3px 3px 0 0;display:block;background:var(--navy-txt);opacity:.85;min-height:2px}
+.dgraf i.zero{background:var(--line);opacity:1}
+.deixo{display:flex;justify-content:space-between;font-size:calc(10.5px * var(--escala));
+  color:var(--muted);margin-top:8px}
+
+.dparc{display:flex;flex-direction:column;gap:14px}
+.dpl .cab{display:flex;align-items:center;gap:9px;font-size:calc(13.5px * var(--escala));margin-bottom:7px}
+.dpl .cab b{font-weight:700;color:var(--ink)}
+.dpl .cab .v{margin-left:auto;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink)}
+.dpl .barra{height:7px;border-radius:4px;background:var(--sutil);overflow:hidden}
+.dpl .barra i{display:block;height:100%;border-radius:4px}
+.dvazio{padding:28px 10px;text-align:center;color:var(--muted);font-size:calc(13.5px * var(--escala))}
+
+/* No celular o cabeçalho tem pouco espaço: o botão de modo vira só
+   o ícone e o selo de versão sai de cena. */
+@media (max-width:640px){
+  .btn-modo span, .btn-modo{font-size:0}
+  .btn-modo{padding:7px 9px}
+  .btn-modo svg{width:17px;height:17px;font-size:initial}
+  .topbar .brand b{font-size:calc(13px * var(--escala))}
+  .topbar .brand i{font-size:calc(9.5px * var(--escala))}
+  .tag-modo{display:none}
+}
 
 /* versão publicada, sempre visível — inclusive na tela de acesso */
 .tag-versao{
@@ -606,6 +996,47 @@ body.parceiro .subnav{display:none}
 
 </head>
 <body>
+<aside class="lateral" id="lateral">
+  <div class="lat-marca">
+    <img src="logo.png" alt="">
+    <div><b>MILHAS PLUS</b><i>controle de liminares</i></div>
+  </div>
+  <div class="lat-busca">
+    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input type="text" id="buscaPC" placeholder="Buscar conta ou parceiro" autocomplete="off" spellcheck="false">
+    <button type="button" id="limparBuscaPC" hidden aria-label="Limpar">&times;</button>
+  </div>
+  <div class="lat-achados" id="achadosPC" hidden></div>
+
+  <nav class="lat-nav" id="latNav">
+    <button data-ir="dash"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.4"/><rect x="14" y="3" width="7" height="5" rx="1.4"/><rect x="3" y="16" width="7" height="5" rx="1.4"/><rect x="14" y="12" width="7" height="9" rx="1.4"/></svg>Dashboard</button>
+    <button data-ir="painel"><svg viewBox="0 0 24 24"><path d="M6 3h8l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5"/><path d="m9 14 2 2 4-4"/></svg>Fechamento</button>
+    <button data-ir="oper" class="no-parceiro"><svg viewBox="0 0 24 24"><path d="M20.6 13.4 12 22l-9-9V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.6" cy="7.6" r="1.3"/></svg>Operações</button>
+    <button data-ir="lanc" class="no-parceiro"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10"/></svg>Lançamentos</button>
+    <button data-ir="fin" class="no-parceiro"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>Financeiro</button>
+    <div class="lat-grupo">Consulta</div>
+    <button data-ir="mais:portal"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg>Portal do parceiro</button>
+    <button data-ir="mais:extrato" class="no-parceiro"><svg viewBox="0 0 24 24"><path d="M6 3h8l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v5h5"/></svg>Extrato da conta</button>
+    <button data-ir="mais:ia" class="no-parceiro"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>Ler extrato — IA</button>
+    <div class="lat-grupo no-parceiro">Configuração</div>
+    <button data-ir="mais:cad" class="no-parceiro"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>Cadastros</button>
+    <button data-ir="mais:cfg" class="no-parceiro"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.1"/><path d="M12 2.2a2 2 0 0 1 2 2v.5a1.4 1.4 0 0 0 2.1 1.2l.4-.2a2 2 0 0 1 2.7.7l.5.9a2 2 0 0 1-.7 2.7l-.4.2a1.4 1.4 0 0 0 0 2.4l.4.2a2 2 0 0 1 .7 2.7l-.5.9a2 2 0 0 1-2.7.7l-.4-.2a1.4 1.4 0 0 0-2.1 1.2v.5a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-.5a1.4 1.4 0 0 0-2.1-1.2l-.4.2a2 2 0 0 1-2.7-.7l-.5-.9a2 2 0 0 1 .7-2.7l.4-.2a1.4 1.4 0 0 0 0-2.4l-.4-.2a2 2 0 0 1-.7-2.7l.5-.9a2 2 0 0 1 2.7-.7l.4.2A1.4 1.4 0 0 0 9 4.7v-.5a2 2 0 0 1 2-2z"/></svg>Ajustes</button>
+  </nav>
+  <div class="lat-pe">
+    <button class="lat-modo" data-modo="mobile">
+      <svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18.5h2"/></svg>
+      Ver como celular
+    </button>
+    <div class="lat-user">
+      <div class="av" id="latIniciais">—</div>
+      <div class="lat-quem"><b id="latNome">—</b><span id="latPapel">administrador</span></div>
+      <button class="lat-sair" id="latSair" title="Sair">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
+      </button>
+    </div>
+  </div>
+</aside>
+
 <div class="topbar">
   <img src="logo.png" alt="" class="brand-logo">
   <div class="brand">
@@ -613,6 +1044,13 @@ body.parceiro .subnav{display:none}
     <i>controle de liminares</i>
   </div>
   <div class="spacer"></div>
+  <button class="ghost" id="btnBuscaMobile" title="Buscar conta ou parceiro" aria-label="Buscar">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+  </button>
+  <button class="ghost btn-modo" data-modo="pc" title="Ver como computador">
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    Computador
+  </button>
   <span id="tagVersao" class="tag-versao" title="Versão publicada deste app"></span>
   <span id="tagParceiro" class="tag-conta" hidden></span>
   <button class="ghost" id="btnSair" hidden>Sair</button>
@@ -663,6 +1101,22 @@ body.parceiro .subnav{display:none}
 </div>
 
 <div class="wrap">
+
+  <!-- ================= DASHBOARD ================= -->
+  <section class="panel" id="p-dash">
+    <div class="dash-topo">
+      <div>
+        <h1>Dashboard</h1>
+        <p id="dashSub">—</p>
+      </div>
+      <div class="dash-mes">
+        <button id="dashAnt" title="Mês anterior">&lsaquo;</button>
+        <span id="dashMes">—</span>
+        <button id="dashProx" title="Próximo mês">&rsaquo;</button>
+      </div>
+    </div>
+    <div id="dashConteudo"></div>
+  </section>
 
   <!-- ================= PAINEL ================= -->
   <section class="panel on" id="p-painel">
@@ -1027,6 +1481,17 @@ body.parceiro .subnav{display:none}
     <button class="btn danger" type="button" id="excluirOp" style="margin-right:auto">Excluir operação</button>
     <button class="btn alt" type="button" data-close>Cancelar</button>
     <button class="btn" type="button" id="salvarOpEdit">Salvar alterações</button>
+  </div>
+</dialog>
+
+<dialog id="dlgBusca">
+  <div class="dlg-head"><span>Buscar</span><button type="button" data-close>&times;</button></div>
+  <div class="dlg-body">
+    <div class="field">
+      <label for="buscaMob">Conta ou parceiro</label>
+      <input type="text" id="buscaMob" placeholder="digite o nome" autocomplete="off" spellcheck="false">
+    </div>
+    <div id="achadosMob"></div>
   </div>
 </dialog>
 
@@ -3082,6 +3547,259 @@ el('btnZap').onclick = ()=>{
   window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');
 };
 
+
+/* =========================================================
+   Modos de visualização e navegação lateral
+   pc     — barra lateral fixa, com a página de Dashboard
+   mobile — o layout de sempre, com a barra inferior
+   O conteúdo das páginas é o mesmo nos dois modos.
+   ========================================================= */
+const MODO = 'mp_modo_visual';
+const modoAtual = () => localStorage.getItem(MODO) || 'pc';   // abre no modo pc
+
+function aplicarModo(m){
+  localStorage.setItem(MODO, m);
+  document.documentElement.setAttribute('data-modo', m);
+  // o Dashboard só existe no modo pc; saindo dele, volta para o painel
+  if(m === 'mobile' && document.getElementById('p-dash').classList.contains('on')) irPara('painel');
+  marcarNav();
+  requestAnimationFrame(ajustarEscala);
+}
+
+/* navega para uma aba, e opcionalmente para uma sub-aba de "Mais" */
+function irPara(destino){
+  const [aba, sub] = destino.split(':');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on', p.id === 'p'+'-'+aba));
+  document.querySelectorAll('.tabbar button').forEach(b=>b.classList.toggle('on', b.dataset.tab === aba));
+  if(sub){
+    document.querySelectorAll('.subnav button').forEach(b=>b.classList.toggle('on', b.dataset.sub === sub));
+    document.querySelectorAll('.sub').forEach(s=>s.classList.toggle('on', s.id === 's-'+sub));
+  }
+  marcarNav();
+  window.scrollTo({top:0});
+  if(aba === 'dash') renderDash();
+  if(aba === 'painel') requestAnimationFrame(ajustarEscala);
+}
+
+function marcarNav(){
+  const aberta = [...document.querySelectorAll('.panel')].find(p=>p.classList.contains('on'));
+  const aba = aberta ? aberta.id.replace('p-','') : 'painel';
+  const sub = [...document.querySelectorAll('.sub')].find(s=>s.classList.contains('on'));
+  const alvo = aba === 'mais' && sub ? 'mais:' + sub.id.replace('s-','') : aba;
+  document.querySelectorAll('#latNav button').forEach(b=>b.classList.toggle('on', b.dataset.ir === alvo));
+  const bm = document.querySelector('.lat-modo span');
+  if(bm) bm.textContent = 'Ver como celular';
+}
+
+document.querySelectorAll('#latNav button').forEach(b=>b.onclick=()=>irPara(b.dataset.ir));
+document.querySelectorAll('[data-modo]').forEach(b=>b.onclick=()=>aplicarModo(b.dataset.modo));
+const latSair = el('latSair');
+if(latSair) latSair.onclick = ()=>{ el('btnSair').click(); };
+
+function renderLateral(){
+  const nome = parceiroLogado ? respNome(parceiroLogado)
+             : ((window.MPSync && MPSync.usuario) || 'Administrador');
+  el('latNome').textContent = nome;
+  el('latPapel').textContent = parceiroLogado ? 'parceiro' : 'administrador';
+  el('latIniciais').textContent = iniciais(nome.includes('@') ? nome.split('@')[0] : nome);
+  document.body.classList.toggle('parceiro-lateral', !!parceiroLogado);
+  document.querySelectorAll('#latNav .no-parceiro').forEach(n=>n.style.display = parceiroLogado ? 'none' : '');
+}
+
+/* =========================================================
+   Busca de contas e parceiros
+   ========================================================= */
+function procurar(termo){
+  const t = (termo||'').trim().toLowerCase();
+  if(t.length < 1) return {contas:[], parceiros:[]};
+  const cabe = s => (s||'').toLowerCase().includes(t);
+  return {
+    parceiros: S.responsaveis.filter(r=>cabe(r.nome) || cabe(r.email) || cabe(r.tel)).slice(0,6),
+    contas:    S.contas.filter(c=>cabe(c.nome) || cabe(c.cpf)).slice(0,8)
+  };
+}
+
+function pintarAchados(box, termo, aoEscolher){
+  const {contas, parceiros} = procurar(termo);
+  if(!termo.trim()){ box.innerHTML=''; box.hidden = true; return; }
+  box.hidden = false;
+  if(!contas.length && !parceiros.length){
+    box.innerHTML = '<div class="vazio">Nada encontrado.</div>'; return;
+  }
+  let html = '';
+  if(parceiros.length){
+    html += '<div class="grupo">Parceiros</div>' + parceiros.map(r=>{
+      const n = S.contas.filter(c=>c.respId===r.id).length;
+      return `<button type="button" data-parc="${r.id}">${esc(r.nome)}<span>${n} conta${n===1?'':'s'}</span></button>`;
+    }).join('');
+  }
+  if(contas.length){
+    html += '<div class="grupo">Contas</div>' + contas.map(c=>
+      `<button type="button" data-conta="${c.id}">${esc(c.nome)}<span>${esc(respNome(c.respId))}</span></button>`).join('');
+  }
+  box.innerHTML = html;
+  box.querySelectorAll('[data-parc]').forEach(b=>b.onclick=()=>{
+    S.filtro.resp = b.dataset.parc; save();
+    preencherSelects(); renderFiltroContas(); contarFiltros(); renderReport(); renderKpis();
+    el('portalResp').value = b.dataset.parc; renderPortal();
+    aoEscolher('mais:portal');
+  });
+  box.querySelectorAll('[data-conta]').forEach(b=>b.onclick=()=>{
+    el('extConta').value = b.dataset.conta; renderExtrato();
+    aoEscolher('mais:extrato');
+  });
+}
+
+const buscaPC = el('buscaPC');
+if(buscaPC){
+  buscaPC.oninput = ()=>{
+    el('limparBuscaPC').hidden = !buscaPC.value;
+    pintarAchados(el('achadosPC'), buscaPC.value, destino=>{
+      irPara(destino); buscaPC.value=''; el('achadosPC').hidden = true; el('limparBuscaPC').hidden = true;
+    });
+  };
+  el('limparBuscaPC').onclick = ()=>{
+    buscaPC.value=''; el('achadosPC').hidden = true; el('limparBuscaPC').hidden = true;
+  };
+}
+const btnBuscaMobile = el('btnBuscaMobile');
+if(btnBuscaMobile){
+  btnBuscaMobile.onclick = ()=>{
+    el('buscaMob').value=''; el('achadosMob').innerHTML='';
+    el('dlgBusca').showModal(); setTimeout(()=>el('buscaMob').focus(), 80);
+  };
+  el('buscaMob').oninput = ()=>pintarAchados(el('achadosMob'), el('buscaMob').value, destino=>{
+    el('dlgBusca').close(); irPara(destino);
+  });
+}
+
+/* =========================================================
+   Dashboard — só no modo pc
+   ========================================================= */
+function mesVizinho(mk_, passo){
+  const [y,m] = mk_.split('-').map(Number);
+  const d = new Date(y, m-1+passo, 1);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+const porMilheiro = (res, milhas) => milhas ? res/(milhas/1000) : 0;
+
+function variacao(atual, antes){
+  if(!antes) return null;
+  return (atual - antes) / Math.abs(antes) * 100;
+}
+function selo(v, bomSubir){
+  if(v === null || !isFinite(v)) return '<span class="var">sem base no mês anterior</span>';
+  const sobe = v >= 0;
+  const classe = (sobe === bomSubir) ? 'sobe' : 'desce';
+  return `<span class="var ${classe}">${sobe?'▲':'▼'} ${Math.abs(v).toFixed(1).replace('.',',')}% vs. mês anterior</span>`;
+}
+
+function renderDash(){
+  const box = el('dashConteudo'); if(!box) return;
+  const mk_ = mesAtual();
+  const d = agrupar(mk_);
+  el('dashMes').textContent = mesLabel(mk_);
+
+  // o mês anterior serve de base de comparação
+  const guardado = S.filtro.resp;
+  const ant = (()=>{ const a = agrupar(mesVizinho(mk_,-1)); return a; })();
+
+  const pagos = S.pagamentos.filter(p=>p.mes===mk_).reduce((a,p)=>a+(+p.valor||0),0);
+  const aPagar = d.responsaveis.filter(r=>r.id).reduce((a,r)=>a+r.saldo,0);
+  const nPend = d.responsaveis.filter(r=>r.id && r.situacao!=='pago').length;
+  const cpmMedio = d.milhas ? d.custo/(d.milhas/1000) : 0;
+
+  el('dashSub').textContent =
+    `${d.contas.length} conta${d.contas.length===1?'':'s'} · ${d.responsaveis.filter(r=>r.id).length} parceiros · ${d.operacoes.length} promoções`;
+
+  if(d.vazio){
+    box.innerHTML = `<div class="dash-card"><div class="empty">Nenhum lançamento em ${esc(mesLabel(mk_))}.</div></div>`;
+    return;
+  }
+
+  const contasTop = d.contas.slice().sort((a,b)=>b.milhas-a.milhas).slice(0,6);
+
+  box.innerHTML = `
+    <div class="dash-kpis">
+      <div class="dash-kpi"><div class="rot"><i style="background:#0B4EA2"></i>Milhas no mês</div>
+        <b>${num(d.milhas)}</b>${selo(variacao(d.milhas, ant.milhas), true)}</div>
+      <div class="dash-kpi"><div class="rot"><i style="background:#B4232A"></i>Custo da operação</div>
+        <b>${money(d.custo)}</b><span class="var">CPM médio ${cpmMedio.toFixed(2).replace('.',',')}</span></div>
+      <div class="dash-kpi"><div class="rot"><i style="background:#16A34A"></i>Resultado</div>
+        <b style="color:var(--green-dark)">${money(d.total)}</b>
+        <span class="var">${money(porMilheiro(d.total, d.milhas))} por milheiro</span></div>
+      <div class="dash-kpi"><div class="rot"><i style="background:#F2C230"></i>A pagar</div>
+        <b>${money(aPagar)}</b><span class="var">${nPend} de ${d.responsaveis.filter(r=>r.id).length} parceiros</span></div>
+      <div class="dash-kpi"><div class="rot"><i style="background:#0F7A38"></i>Já pago</div>
+        <b>${money(pagos)}</b><span class="var">${S.pagamentos.filter(p=>p.mes===mk_).length} baixa(s)</span></div>
+    </div>
+
+    <div class="dash-cols">
+      <section class="dash-card">
+        <h3>Operações do mês <span>${d.operacoes.length} promoções · ${d.contas.reduce((a,c)=>a+c.qtd,0)} lançamentos</span></h3>
+        <div class="conteudo">
+          <table>
+            <thead><tr><th>Promoção</th><th>CIA</th><th class="n">Milhas</th><th class="n">Custo</th><th class="n">Resultado</th><th class="n">R$/mil</th></tr></thead>
+            <tbody>${d.operacoes.map(o=>`<tr>
+              <td><b>${esc(o.op.ref)}</b><span class="dash-sub">${esc(o.op.fonte||'—')} · ${o.qtd} conta${o.qtd>1?'s':''}</span></td>
+              <td style="color:${ciaColor(o.op.cia)};font-weight:800;font-size:calc(12.5px * var(--escala))">${esc(o.op.cia)}</td>
+              <td class="n">${num(o.milhas)}</td>
+              <td class="n" style="color:#B4232A">${o.custo?money(o.custo):'—'}</td>
+              <td class="n" style="color:var(--green-dark);font-weight:700">${money(o.resultado)}</td>
+              <td class="n">${porMilheiro(o.resultado, o.milhas).toFixed(2).replace('.',',')}</td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div class="rodape"><span>Total do período</span>
+          <span>${num(d.milhas)} milhas · <span style="color:var(--green-dark)">${money(d.total)}</span></span></div>
+      </section>
+
+      <section class="dash-card">
+        <h3>Por parceiro <span>a receber</span></h3>
+        <div class="dash-parc">
+          ${d.responsaveis.map(r=>`<div class="dash-p">
+            <div class="cab"><b>${esc(r.nome)}</b>
+              <span class="badge ${CLASSE_PGTO[r.situacao]}">${ROTULO_PGTO[r.situacao]}</span>
+              <span class="v">${money(r.saldo || r.total)}</span></div>
+            <div class="barra"><i style="width:${Math.max(3,r.pct).toFixed(1)}%;background:${r.cor||'#12304C'}"></i></div>
+          </div>`).join('')}
+        </div>
+        <div class="rodape"><span>Total a receber</span><span>${money(aPagar)}</span></div>
+      </section>
+
+      <section class="dash-card">
+        <h3>Contas com maior volume <span>${esc(mesLabel(mk_))}</span></h3>
+        <div class="conteudo">
+          <table>
+            <thead><tr><th>Conta</th><th>Parceiro</th><th class="n">Milhas</th><th class="n">Lanç.</th><th class="n">Resultado</th></tr></thead>
+            <tbody>${contasTop.map(a=>`<tr>
+              <td><b>${esc(a.conta.nome)}</b></td>
+              <td style="color:var(--muted)">${esc(respNome(a.conta.respId))}</td>
+              <td class="n">${num(a.milhas)}</td>
+              <td class="n">${a.qtd}</td>
+              <td class="n" style="color:var(--green-dark);font-weight:700">${money(a.total)}</td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="dash-card">
+        <h3>Resultado por companhia <span>participação</span></h3>
+        <div class="dash-parc">
+          ${d.cias.map(c=>`<div class="dash-p">
+            <div class="cab"><b style="color:${ciaColor(c.nome)}">${esc(c.nome)}</b>
+              <span class="v">${money(c.valor)}</span></div>
+            <div class="barra"><i style="width:${Math.max(3,c.pct).toFixed(1)}%;background:${ciaColor(c.nome)}"></i></div>
+          </div>`).join('')}
+        </div>
+        <div class="rodape"><span>Total</span><span style="color:var(--green-dark)">${money(d.total)}</span></div>
+      </section>
+    </div>`;
+}
+
+el('dashAnt').onclick  = ()=>{ el('mesRef').value = mesVizinho(mesAtual(),-1); el('mesRef').onchange(); renderDash(); };
+el('dashProx').onclick = ()=>{ el('mesRef').value = mesVizinho(mesAtual(), 1); el('mesRef').onchange(); renderDash(); };
+
 /* =========================================================
    Navegação + selects + boot
    ========================================================= */
@@ -3090,6 +3808,7 @@ document.querySelectorAll('.tabbar button').forEach(b=>{
     document.querySelectorAll('.tabbar button').forEach(x=>x.classList.toggle('on',x===b));
     document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('on',p.id==='p-'+b.dataset.tab));
     window.scrollTo({top:0});
+    marcarNav();
     if(b.dataset.tab==='painel') requestAnimationFrame(ajustarEscala);
   };
 });
@@ -3098,6 +3817,7 @@ document.querySelectorAll('.subnav button').forEach(b=>{
     document.querySelectorAll('.subnav button').forEach(x=>x.classList.toggle('on',x===b));
     document.querySelectorAll('.sub').forEach(s=>s.classList.toggle('on',s.id==='s-'+b.dataset.sub));
     window.scrollTo({top:0});
+    marcarNav();
   };
 });
 
@@ -3189,7 +3909,9 @@ function refreshAll(){
   renderOps(); renderProgramasClube(); renderInvestidorClube();
   if(el('boxLancarClube') && !el('boxLancarClube').hidden) renderContasClube();
   renderLancamentos(); renderFinanceiro();
-  renderExtrato(); renderCadastros(); renderAcessos(); renderFechar(); renderStatusNuvem(); renderStatusVersao(); renderTagModo(); renderAparencia(); renderChaveIA();
+  renderExtrato(); renderCadastros(); renderAcessos(); renderFechar(); renderStatusNuvem(); renderStatusVersao();
+  renderLateral();
+  if(el('p-dash').classList.contains('on')) renderDash(); renderTagModo(); renderAparencia(); renderChaveIA();
   const bf = el('btnForcarAtualizar'); if(bf) bf.onclick = forcarAtualizacao;
 }
 
@@ -3351,6 +4073,7 @@ window.__erroAcesso = function(e, etapa, email, uid){
   // antes daqui — por isso os filtros de Lançamentos e Extrato não reagiam.
   ligarFiltros();
   aplicarAparencia();
+  aplicarModo(modoAtual());
 
   if(window.MP_USA_FIREBASE){ el('loginParceiro').hidden = false; return; }   // a nuvem cuida do resto
   const meses=[...new Set(S.lancamentos.map(l=>mesKey(l.data)))].sort();
